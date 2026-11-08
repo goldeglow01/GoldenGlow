@@ -43,7 +43,7 @@ export default function TeamPage() {
                     alt={`${member.name}, ${role}`}
                     width="560"
                     height="700"
-                    loading="eager"
+                    loading={i === 0 ? 'eager' : 'lazy'}
                     decoding="async"
                   />
                 </figure>

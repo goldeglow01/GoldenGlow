@@ -39,7 +39,10 @@ export default function JobsPanel({ data }) {
     const min = Number(form.salaryMin);
     const max = Number(form.salaryMax);
     db.add('jobs', {
-      id: `GG-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: `GG-${Date.now().toString(36).toUpperCase()}-${Math.random()
+        .toString(36)
+        .slice(2, 5)
+        .toUpperCase()}`,
       title: form.title.trim(),
       company: form.company.trim(),
       city: form.city,

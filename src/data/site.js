@@ -7,6 +7,9 @@
 export const site = {
   name: 'GoldenGlow',
   legalName: 'GoldenGlow Workforce Solutions',
+  // Canonical origin used for canonical links, sitemap entries and Open Graph
+  // URLs. Override with VITE_SITE_URL when the site moves to a custom domain.
+  url: (import.meta.env.VITE_SITE_URL || 'https://goldenglowqr.com').replace(/\/$/, ''),
   since: '2026',
   tagline: { en: 'Workforce & Manpower Solutions', ar: 'حلول القوى العاملة والتوظيف' },
   description: {

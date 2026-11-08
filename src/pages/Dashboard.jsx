@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { jobs as sampleJobs, formatDate } from '../data/jobs';
 import { industries, industryName } from '../data/industries';
 import { cities, employmentTypes, experienceLevels } from '../data/site';
+import { db } from '../lib/db';
 
 const employerTabs = [
   { id: 'overview', label: 'Dashboard', icon: 'target' },
@@ -649,7 +650,23 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
     phone: '',
     bio: '',
   });
-  const saved = useMemo(() => sampleJobs.filter((job) => savedJobs.includes(job.id)), [savedJobs]);
+  // Saved jobs can be sample vacancies or admin-verified postings, so resolve
+  // them against the same pool the jobs browser shows.
+  const [postedJobs, setPostedJobs] = useState(() => db.list('jobs'));
+  useEffect(() => db.subscribe((snapshot) => setPostedJobs(snapshot.jobs || [])), []);
+  const jobPool = useMemo(
+    () => [
+      ...postedJobs
+        .filter((job) => job.status === 'verified')
+        .map((job) => ({ ...job, verified: true })),
+      ...sampleJobs,
+    ],
+    [postedJobs]
+  );
+  const saved = useMemo(
+    () => jobPool.filter((job) => savedJobs.includes(job.id)),
+    [jobPool, savedJobs]
+  );
   const completion = useMemo(() => {
     const fields = Object.values(profile).filter((v) => String(v).trim().length > 1);
     return Math.round((fields.length / Object.keys(profile).length) * 100);
@@ -834,7 +851,7 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
       <div className="dash-cards">
         <div className="dash-stat">
           <small>{t('Saved jobs')}</small>
-          <strong>{savedJobs.length}</strong>
+          <strong>{saved.length}</strong>
         </div>
         <div className="dash-stat">
           <small>{t('Applications')}</small>
@@ -848,7 +865,7 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
           <small>{t('Browse vacancies')}</small>
           <strong>
             <Link to="/jobs" style={{ fontSize: 16, color: 'var(--blue)' }}>
-              {sampleJobs.length} {t('Jobs')}
+              {jobPool.length} {t('Jobs')}
             </Link>
           </strong>
         </div>

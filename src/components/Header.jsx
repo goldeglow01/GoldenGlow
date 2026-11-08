@@ -27,6 +27,7 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState('');
   const searchRef = useRef(null);
+  const mobileNavRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setStuck(window.scrollY > 10);
@@ -48,6 +49,42 @@ export default function Header() {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = previous;
+    };
+  }, [mobileOpen]);
+
+  // Keyboard support for the mobile drawer: Escape closes it, Tab stays inside,
+  // and focus returns to the menu button when it closes.
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const previouslyFocused = document.activeElement;
+    const focusables = () =>
+      mobileNavRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      ) || [];
+    const timer = setTimeout(() => focusables()[0]?.focus(), 30);
+    const onKey = (event) => {
+      if (event.key === 'Escape') {
+        setMobileOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusables();
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      clearTimeout(timer);
+      previouslyFocused?.focus?.();
     };
   }, [mobileOpen]);
 
@@ -87,7 +124,7 @@ export default function Header() {
           <div className="container topbar__inner">
             <div className="topbar__contacts">
               <a
-                className={`topbar__item ${isPlaceholder(site.contact.email) ? '' : ''}`}
+                className="topbar__item"
                 href={isPlaceholder(site.contact.email) ? undefined : `mailto:${site.contact.email}`}
               >
                 <Icon name="mail" size={14} />
@@ -294,9 +331,14 @@ export default function Header() {
 
       {/* ---------- Mobile drawer ---------- */}
       {mobileOpen && (
-        <div className="mobile-nav" role="dialog" aria-modal="true">
-          <div className="mobile-nav__scrim" onClick={() => setMobileOpen(false)} />
-          <div className="mobile-nav__panel">
+        <div
+          className="mobile-nav"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('Main navigation')}
+        >
+          <div className="mobile-nav__scrim" aria-hidden="true" onClick={() => setMobileOpen(false)} />
+          <div className="mobile-nav__panel" ref={mobileNavRef}>
             <div className="mobile-nav__head">
               <Logo size={40} />
               <button

@@ -15,7 +15,9 @@ export default function Industries() {
     if (!track) return;
     const card = track.querySelector('.ind-card');
     const step = card ? card.getBoundingClientRect().width + 18 : 240;
-    track.scrollBy({ left: direction * step * 2, behavior: 'smooth' });
+    // In RTL the scroll origin is mirrored, so "next" moves the other way.
+    const rtl = document.documentElement.dir === 'rtl';
+    track.scrollBy({ left: (rtl ? -direction : direction) * step * 2, behavior: 'smooth' });
   };
 
   return (

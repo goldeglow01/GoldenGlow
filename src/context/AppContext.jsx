@@ -42,6 +42,31 @@ export function AppProvider({ children }) {
   useEffect(() => write('gg_saved_jobs', savedJobs), [savedJobs]);
   useEffect(() => write('gg_applications', applications), [applications]);
 
+  // The admin panel edits the shared record store, not this component's state.
+  // Mirror status changes and deletions into the dashboard list so workers see
+  // the same status the office set.
+  useEffect(
+    () =>
+      db.subscribe((snapshot) => {
+        const rows = snapshot.applications || [];
+        setApplications((prev) => {
+          if (!prev.length) return prev;
+          const byJob = new Map(rows.map((row) => [row.jobId, row]));
+          const next = prev
+            .filter((app) => byJob.has(app.jobId))
+            .map((app) => ({ ...app, status: byJob.get(app.jobId).status || app.status }));
+          const unchanged =
+            next.length === prev.length &&
+            next.every(
+              (app, index) =>
+                app.jobId === prev[index].jobId && app.status === prev[index].status
+            );
+          return unchanged ? prev : next;
+        });
+      }),
+    []
+  );
+
   // Keep the signed-in user in sync with Supabase (session restore + sign out
   // triggered in another tab). Without credentials we stay in preview mode.
   useEffect(() => {
@@ -141,7 +166,15 @@ export function AppProvider({ children }) {
   const addApplication = useCallback((app) => {
     const entry = { ...app, status: 'Submitted', appliedAt: new Date().toISOString() };
     setApplications((prev) => [entry, ...prev.filter((a) => a.jobId !== app.jobId)]);
-    // Same record shape the admin panel reads, so the office sees it live.
+
+    // Update the existing row instead of appending a duplicate when someone
+    // applies to the same vacancy twice. Same record shape the admin panel
+    // reads, so the office sees it live.
+    const existing = db.list('applications').find((row) => row.jobId === app.jobId);
+    if (existing) {
+      db.patch('applications', existing.id, entry);
+      return { ...existing, ...entry };
+    }
     return db.add('applications', entry);
   }, []);
 

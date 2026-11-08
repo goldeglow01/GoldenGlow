@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Private or account-only areas
+Disallow: /admin
+Disallow: /login
+Disallow: /signup
+Disallow: /dashboard
+
+Sitemap: https://goldenglowqr.com/sitemap.xml

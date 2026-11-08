@@ -212,8 +212,6 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
 
       <JobAlert filters={filters} />
 
-
-
       <div className="jobs-meta">
         <span>
           {t('Showing')} <strong>{shown.length}</strong> {t('of')} <strong>{filtered.length}</strong>{' '}

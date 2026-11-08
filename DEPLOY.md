@@ -75,6 +75,16 @@ Without these the sign-in screen runs in a local preview mode; marketing pages a
 records Vercel shows (usually an `A` record for the apex and a `CNAME` for `www`). Vercel
 issues the TLS certificate automatically once DNS resolves.
 
+When you connect a custom domain, also update the canonical URL used for SEO:
+
+1. Add `VITE_SITE_URL=https://your-domain.com` in **Settings → Environment Variables** and
+   redeploy. This updates the per-route canonical, `og:url`, Twitter and Open Graph tags.
+2. Update the absolute URLs in `public/robots.txt`, `public/sitemap.xml` and the canonical /
+   Open Graph tags in `index.html` to the same domain, then redeploy.
+
+The structured data (`EmploymentAgency` / `WebSite` JSON-LD in `index.html`) should also be
+updated to the new domain.
+
 ## 5. Everyday deployments
 
 Once imported, every push to `main` deploys to production automatically, and every pull

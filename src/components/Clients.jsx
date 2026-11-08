@@ -25,7 +25,7 @@ export default function Clients() {
                     alt={copy === 0 ? client.name : ''}
                     width="560"
                     height="360"
-                    loading={copy === 0 ? 'eager' : 'lazy'}
+                    loading="lazy"
                     decoding="async"
                   />
                 </li>

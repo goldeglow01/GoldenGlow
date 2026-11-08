@@ -14,6 +14,7 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import Legal from './pages/Legal';
 import { useApp } from './context/AppContext';
+import { site } from './data/site';
 
 function ScrollManager() {
   const { pathname, hash } = useLocation();
@@ -24,7 +25,8 @@ function ScrollManager() {
       const attempt = (tries) => {
         const el = document.getElementById(id);
         if (el) {
-          const top = el.getBoundingClientRect().top + window.scrollY - 96;
+          // Keep the target clear of the sticky top bar + header stack.
+          const top = el.getBoundingClientRect().top + window.scrollY - 132;
           window.scrollTo({ top, behavior: 'smooth' });
         } else if (tries > 0) {
           setTimeout(() => attempt(tries - 1), 80);
@@ -39,56 +41,125 @@ function ScrollManager() {
   return null;
 }
 
+const DEFAULT_DESCRIPTION =
+  'GoldenGlow connects Saudi employers with reliable skilled and unskilled workers across construction, hospitality, logistics and more. Search jobs or request workforce.';
+
 const routeMeta = {
-  '/': [
-    'GoldenGlow | Workforce Recruitment & Manpower Services in Saudi Arabia',
-    'GoldenGlow connects Saudi employers with reliable skilled workers across construction, technical services, hospitality, logistics and more. Search jobs or request workforce.',
-  ],
-  '/jobs': [
-    'Jobs in Saudi Arabia | GoldenGlow Workforce',
-    'Browse vacancies across Riyadh, Jeddah, Dammam, Makkah, Madinah and NEOM. Filter by industry, city, experience and employment type.',
-  ],
-  '/team': [
-    'Our Team | GoldenGlow Workforce',
-    'Meet the people behind GoldenGlow: leadership, operations and employer communication, with direct contact details.',
-  ],
-  '/licences': [
-    'Licences & Registrations | GoldenGlow',
-    'Foreign employment licence, company registration, PAN certificate and labour approvals held by GoldenGlow group companies.',
-  ],
-  '/login': ['Sign In | GoldenGlow Workforce', 'Sign in to your GoldenGlow employer or worker dashboard.'],
-  '/signup': ['Create an Account | GoldenGlow Workforce', 'Join GoldenGlow as an employer hiring workers or as a worker looking for opportunities in Saudi Arabia.'],
-  '/dashboard': ['Dashboard | GoldenGlow Workforce', 'Manage job listings, applications and candidate profiles.'],
-  '/admin': ['Admin | GoldenGlow', 'Private GoldenGlow admin panel.'],
-  '/legal/privacy': [
-    'Privacy Policy | GoldenGlow',
-    'How GoldenGlow collects, uses and protects the information you share through this website.',
-  ],
-  '/legal/terms': [
-    'Terms and Conditions | GoldenGlow',
-    'The terms that govern use of the GoldenGlow website and our workforce services.',
-  ],
-  '/legal/cookies': [
-    'Cookie Policy | GoldenGlow',
-    'What this website stores in your browser, and how to control it.',
-  ],
+  '/': {
+    title: 'GoldenGlow | Workforce Recruitment & Manpower Services in Saudi Arabia',
+    description: DEFAULT_DESCRIPTION,
+  },
+  '/jobs': {
+    title: 'Jobs in Saudi Arabia | GoldenGlow Workforce',
+    description:
+      'Browse vacancies across Riyadh, Jeddah, Dammam, Makkah, Madinah and NEOM. Filter by industry, city, experience and employment type.',
+  },
+  '/team': {
+    title: 'Our Team | GoldenGlow Workforce',
+    description:
+      'Meet the people behind GoldenGlow: leadership, operations and employer communication, with direct contact details.',
+  },
+  '/licences': {
+    title: 'Licences & Registrations | GoldenGlow',
+    description:
+      'Foreign employment licence, company registration, PAN certificate and labour approvals held by GoldenGlow group companies.',
+  },
+  '/login': {
+    title: 'Sign In | GoldenGlow Workforce',
+    description: 'Sign in to your GoldenGlow employer or worker dashboard.',
+    noindex: true,
+  },
+  '/signup': {
+    title: 'Create an Account | GoldenGlow Workforce',
+    description:
+      'Join GoldenGlow as an employer hiring workers or as a worker looking for opportunities in Saudi Arabia.',
+    noindex: true,
+  },
+  '/dashboard': {
+    title: 'Dashboard | GoldenGlow Workforce',
+    description: 'Manage job listings, applications and candidate profiles.',
+    noindex: true,
+  },
+  '/admin': {
+    title: 'Admin | GoldenGlow',
+    description: 'Private GoldenGlow admin panel.',
+    noindex: true,
+  },
 };
+
+const legalMeta = {
+  privacy: {
+    title: 'Privacy Policy | GoldenGlow',
+    description:
+      'How GoldenGlow collects, uses and protects the information you share through this website.',
+  },
+  terms: {
+    title: 'Terms and Conditions | GoldenGlow',
+    description: 'The terms that govern use of the GoldenGlow website and our workforce services.',
+  },
+  cookies: {
+    title: 'Cookie Policy | GoldenGlow',
+    description: 'What this website stores in your browser, and how to control it.',
+  },
+};
+
+const NOT_FOUND_META = {
+  title: 'Page not found | GoldenGlow',
+  description: DEFAULT_DESCRIPTION,
+  noindex: true,
+  // A missing URL should not canonicalise to itself; point at the home page.
+  canonicalPath: '/',
+};
+
+/** Resolve the metadata for a pathname, normalising slashes and known prefixes. */
+function resolveMeta(pathname) {
+  const path = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
+  if (routeMeta[path]) return { path, ...routeMeta[path] };
+  if (path.startsWith('/dashboard')) return { path, ...routeMeta['/dashboard'] };
+  if (path.startsWith('/legal/')) {
+    const slug = path.slice('/legal/'.length);
+    if (legalMeta[slug]) return { path, ...legalMeta[slug] };
+  }
+  return { path, ...NOT_FOUND_META };
+}
+
+function metaTag(attribute, key) {
+  let tag = document.head.querySelector(`meta[${attribute}="${key}"]`);
+  if (!tag) {
+    tag = document.createElement('meta');
+    tag.setAttribute(attribute, key);
+    document.head.appendChild(tag);
+  }
+  return tag;
+}
+
+function canonicalLink() {
+  let link = document.head.querySelector('link[rel="canonical"]');
+  if (!link) {
+    link = document.createElement('link');
+    link.setAttribute('rel', 'canonical');
+    document.head.appendChild(link);
+  }
+  return link;
+}
 
 function MetaManager() {
   const { pathname } = useLocation();
   useEffect(() => {
-    const key = routeMeta[pathname]
-      ? pathname
-      : pathname.startsWith('/dashboard')
-        ? '/dashboard'
-        : pathname.startsWith('/legal')
-          ? null
-          : '/';
-    const entry = key ? routeMeta[key] : null;
-    if (entry) {
-      document.title = entry[0];
-      document.querySelector('meta[name="description"]')?.setAttribute('content', entry[1]);
-    }
+    const { path, title, description, noindex, canonicalPath } = resolveMeta(pathname);
+    const canonical = `${site.url}${canonicalPath ?? (path === '/' ? '/' : path)}`;
+
+    document.title = title;
+    metaTag('name', 'description').content = description;
+    metaTag('name', 'robots').content = noindex
+      ? 'noindex, nofollow'
+      : 'index, follow, max-image-preview:large';
+    metaTag('property', 'og:title').content = title;
+    metaTag('property', 'og:description').content = description;
+    metaTag('property', 'og:url').content = canonical;
+    metaTag('name', 'twitter:title').content = title;
+    metaTag('name', 'twitter:description').content = description;
+    canonicalLink().setAttribute('href', canonical);
   }, [pathname]);
   return null;
 }

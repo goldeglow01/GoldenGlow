@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Icon from './Icon';
 import { db } from '../lib/db';
 import { useApp } from '../context/AppContext';
@@ -11,6 +11,12 @@ export default function JobAlert({ filters }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+
+  // Let the visitor save another alert after they change the filters.
+  const filterKey = JSON.stringify(filters);
+  useEffect(() => {
+    setSaved(false);
+  }, [filterKey]);
 
   const summary = [
     filters.q && `“${filters.q}”`,

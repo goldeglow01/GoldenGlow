@@ -160,6 +160,7 @@ export const ar = {
   'Salary: high to low': 'الراتب: من الأعلى',
   'Clear filters': 'مسح الفلاتر',
   'jobs found': 'وظيفة',
+  'Job listings': 'قائمة الوظائف',
   'No jobs match your filters': 'لا توجد وظائف مطابقة',
   'Try a different keyword, city or industry.': 'جرّب كلمة مفتاحية أو مدينة أو قطاعًا آخر.',
   'Show sample jobs': 'عرض الوظائف التجريبية',
@@ -351,6 +352,7 @@ export const ar = {
   'This field is required': 'هذا الحقل مطلوب',
   'Enter a valid email address': 'أدخل بريدًا إلكترونيًا صحيحًا',
   'Enter a valid phone number': 'أدخل رقم هاتف صحيحًا',
+  'Enter a whole number of workers': 'أدخل عددًا صحيحًا من العمال',
   'Please enter at least 20 characters.': 'يرجى إدخال 20 حرفًا على الأقل.',
   'Saudi phone not configured': 'الهاتف السعودي غير مُعد',
 

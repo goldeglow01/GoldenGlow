@@ -34,7 +34,7 @@ export default function About() {
             alt="Construction team in safety gear collaborating on site with a tablet"
             width="900"
             height="950"
-            loading="eager"
+            loading="lazy"
             decoding="async"
           />
           <div className="about-media__badge">

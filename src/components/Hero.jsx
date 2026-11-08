@@ -85,6 +85,7 @@ export default function Hero() {
                 width="1800"
                 height="820"
                 loading={i === 0 ? 'eager' : 'lazy'}
+                fetchpriority={i === 0 ? 'high' : 'auto'}
                 decoding="async"
               />
             </div>

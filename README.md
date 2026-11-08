@@ -18,7 +18,7 @@ The marketing pages need no environment variables. Real accounts need two Supaba
 
 **Source:** https://github.com/Raisevane/GoldenGlow
 
-**Live deployment:** https://goldenglow-steel.vercel.app (Vercel, production)
+**Live deployment:** https://goldenglowqr.com (Vercel, production)
 
 Redeploy with:
 
@@ -293,10 +293,10 @@ component inherits them), `--navy`/`--navy-900` the near-black plum used for dar
 
 A private page, deliberately not linked from the site menu.
 
-- URL: `/admin` (e.g. https://goldenglow-steel.vercel.app/admin)
-- Email: `ankit176424@gmail.com`
+- URL: `/admin` (e.g. https://goldenglowqr.com/admin)
+- Email: `info@goldenglowqr.com` (default in `src/lib/admin.js`; override with `VITE_ADMIN_EMAIL`)
 - Password: held by the business (stored only as a SHA-256 digest in `src/lib/admin.js`;
-  override with `VITE_ADMIN_EMAIL` and `VITE_ADMIN_PASSWORD_HASH` at build time).
+  override with `VITE_ADMIN_PASSWORD_HASH` at build time).
 - Sessions last 8 hours and are kept in `sessionStorage`.
 
 Panels: **Overview** (live counters + activity feed), **Accounts** (every sign-up and sign-in with

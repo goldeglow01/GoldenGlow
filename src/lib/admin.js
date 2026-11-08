@@ -16,20 +16,13 @@
 const SESSION_KEY = 'gg_admin_session';
 const SESSION_TTL = 8 * 60 * 60 * 1000; // 8 hours
 
-// Vite injects `import.meta.env` into the bundle at build time. In this older
-// Vite build that macro is not defined at runtime, so fall back to the plain
-// `process.env` (Vercel sets `VITE_*` as `process.env.VITE_*` for current
-// builds). Node 20+ reads `.env` files automatically, so:
-const env = (import.meta.env && import.meta.env.VITE_ADMIN_EMAIL) ||
-           (process.env.VITE_ADMIN_EMAIL || '') ||
-           (process.env.REACT_APP_ADMIN_EMAIL || '') ||
-           '';
+// Vite replaces `import.meta.env.VITE_*` at build time from `.env.local` (or
+// the Vercel project environment). There is no `process` object in the browser,
+// so only `import.meta.env` may be read here.
+const env = import.meta.env.VITE_ADMIN_EMAIL || '';
 const ADMIN_EMAIL = env.toLowerCase() || 'info@goldenglowqr.com';
 
-const adminPasswordHash = (import.meta.env && import.meta.env.VITE_ADMIN_PASSWORD_HASH) ||
-  (process.env.VITE_ADMIN_PASSWORD_HASH || '') ||
-  (process.env.REACT_APP_ADMIN_PASSWORD_HASH || '') ||
-  '';
+const adminPasswordHash = import.meta.env.VITE_ADMIN_PASSWORD_HASH || '';
 const ADMIN_PASSWORD_HASH = adminPasswordHash.toLowerCase() ||
   '7fdb287e611a09b520ace998aac61fbfacc9c36ee655114f6a1eb3df91e3cbf9';
 

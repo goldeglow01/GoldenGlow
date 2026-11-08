@@ -26,6 +26,7 @@ export default function JobsPage() {
 
       <section className="section" style={{ paddingTop: 'clamp(28px, 3vw, 44px)' }}>
         <div className="container">
+          <h2 className="sr-only">{t('Job listings')}</h2>
           <JobsBrowser syncUrl limit={6} />
         </div>
       </section>

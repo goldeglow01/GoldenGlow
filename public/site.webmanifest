@@ -1,0 +1,18 @@
+{
+  "name": "GoldenGlow Workforce",
+  "short_name": "GoldenGlow",
+  "description": "Workforce recruitment and manpower services connecting Saudi employers with reliable skilled and unskilled workers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1769E8",
+  "icons": [
+    {
+      "src": "/images/logo-mark.png",
+      "sizes": "320x320",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

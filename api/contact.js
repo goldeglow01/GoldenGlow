@@ -30,10 +30,74 @@ const escapeHtml = (value) =>
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
+const SITE_ORIGIN = (
+  process.env.SITE_URL ||
+  process.env.VITE_SITE_URL ||
+  'https://goldenglowqr.com'
+).replace(/\/$/, '');
+
+// Best-effort per-instance throttle. Serverless instances are short-lived, so
+// this raises the cost of abuse but is not a substitute for an edge rate limit.
+const WINDOW_MS = 10 * 60 * 1000;
+const MAX_PER_WINDOW = 5;
+const hits = new Map();
+
+function clientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded) return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const recent = (hits.get(ip) || []).filter((at) => now - at < WINDOW_MS);
+  if (recent.length >= MAX_PER_WINDOW) {
+    hits.set(ip, recent);
+    return true;
+  }
+  recent.push(now);
+  hits.set(ip, recent);
+  if (hits.size > 5000) {
+    for (const [key, times] of hits) {
+      if (!times.some((at) => now - at < WINDOW_MS)) hits.delete(key);
+    }
+  }
+  return false;
+}
+
+/** Reject cross-site browser submissions; preview/custom domains match their own origin. */
+function isSameOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const own = host ? `${proto}://${host}` : null;
+  return origin === SITE_ORIGIN || (!!own && origin === own);
+}
+
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!isSameOrigin(req)) {
+    return res.status(403).json({ error: 'Unexpected request origin.' });
+  }
+
+  const contentLength = Number(req.headers['content-length'] || 0);
+  if (contentLength > 20_000) {
+    return res.status(413).json({ error: 'Request body is too large.' });
+  }
+
+  if (isRateLimited(clientIp(req))) {
+    res.setHeader('Retry-After', String(Math.round(WINDOW_MS / 1000)));
+    return res.status(429).json({
+      error: 'Too many enquiries from this connection. Please try again later.',
+      code: 'RATE_LIMITED',
+    });
   }
 
   if (!process.env.SMTP_PASS) {
@@ -133,9 +197,11 @@ export default async function handler(req, res) {
     });
 
     await transporter.sendMail({
-      from: `"GoldenGlow Website" <${user}>`,
+      // Object form prevents a crafted display name from injecting extra
+      // recipients into the address header.
+      from: { name: 'GoldenGlow Website', address: user },
       to,
-      replyTo: `"${name}" <${email}>`,
+      replyTo: { name, address: email },
       subject: `Website enquiry — ${inquiry || 'General'} — ${name}`,
       text,
       html,

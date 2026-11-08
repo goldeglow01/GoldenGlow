@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { site } from '../data/site';
@@ -152,7 +152,11 @@ const pages = {
 export default function Legal() {
   const { slug } = useParams();
   const { t } = useApp();
-  const page = pages[slug] ?? pages.privacy;
+
+  // Unknown legal slugs should not silently render the privacy policy under a
+  // wrong URL; send visitors (and crawlers) to the canonical privacy page.
+  if (!pages[slug]) return <Navigate to="/legal/privacy" replace />;
+  const page = pages[slug];
 
   return (
     <div className="container">

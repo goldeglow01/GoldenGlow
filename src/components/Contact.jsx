@@ -45,7 +45,7 @@ export default function Contact() {
     if (!form.inquiry) next.inquiry = t('Select an option');
     if (!form.message.trim()) next.message = t('This field is required');
     else if (form.message.trim().length < 20) next.message = t('Please enter at least 20 characters.');
-    if (form.workers && !/^\d+$/.test(form.workers)) next.workers = t('Enter a valid phone number');
+    if (form.workers && !/^\d+$/.test(form.workers)) next.workers = t('Enter a whole number of workers');
     return next;
   };
 
@@ -294,8 +294,13 @@ export default function Contact() {
                     autoComplete="email"
                     placeholder="name@company.com"
                     aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? 'c-email-error' : undefined}
                   />
-                  {errors.email && <span className="field-error">{errors.email}</span>}
+                  {errors.email && (
+                    <span className="field-error" id="c-email-error">
+                      {errors.email}
+                    </span>
+                  )}
                 </div>
 
                 <div className="field">
@@ -308,8 +313,13 @@ export default function Contact() {
                     placeholder="+966 5X XXX XXXX"
                     autoComplete="tel"
                     aria-invalid={!!errors.phone}
+                    aria-describedby={errors.phone ? 'c-phone-error' : undefined}
                   />
-                  {errors.phone && <span className="field-error">{errors.phone}</span>}
+                  {errors.phone && (
+                    <span className="field-error" id="c-phone-error">
+                      {errors.phone}
+                    </span>
+                  )}
                 </div>
 
                 <div className="field">
@@ -343,6 +353,7 @@ export default function Contact() {
                     value={form.inquiry}
                     onChange={set('inquiry')}
                     aria-invalid={!!errors.inquiry}
+                    aria-describedby={errors.inquiry ? 'c-inquiry-error' : undefined}
                   >
                     <option value="">{t('Select an option')}</option>
                     <option value="Hire Workers">{t('Hire Workers')}</option>
@@ -350,7 +361,11 @@ export default function Contact() {
                     <option value="Partnership">{t('Partnership')}</option>
                     <option value="General Inquiry">{t('General Inquiry')}</option>
                   </select>
-                  {errors.inquiry && <span className="field-error">{errors.inquiry}</span>}
+                  {errors.inquiry && (
+                    <span className="field-error" id="c-inquiry-error">
+                      {errors.inquiry}
+                    </span>
+                  )}
                 </div>
 
                 <div className="field">
@@ -374,8 +389,14 @@ export default function Contact() {
                     onChange={set('workers')}
                     inputMode="numeric"
                     placeholder="e.g. 12"
+                    aria-invalid={!!errors.workers}
+                    aria-describedby={errors.workers ? 'c-workers-error' : undefined}
                   />
-                  {errors.workers && <span className="field-error">{errors.workers}</span>}
+                  {errors.workers && (
+                    <span className="field-error" id="c-workers-error">
+                      {errors.workers}
+                    </span>
+                  )}
                 </div>
 
                 <div className="field full">
@@ -387,8 +408,13 @@ export default function Contact() {
                     onChange={set('message')}
                     placeholder={t('Describe the roles, site location and timeline.')}
                     aria-invalid={!!errors.message}
+                    aria-describedby={errors.message ? 'c-message-error' : undefined}
                   />
-                  {errors.message && <span className="field-error">{errors.message}</span>}
+                  {errors.message && (
+                    <span className="field-error" id="c-message-error">
+                      {errors.message}
+                    </span>
+                  )}
                 </div>
               </div>
 

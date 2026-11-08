@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Modal from './Modal';
 import Icon from './Icon';
@@ -94,6 +94,16 @@ export function ApplyModal({ job, onClose }) {
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState(null);
+  const timerRef = useRef(null);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearTimeout(timerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (job) {
@@ -108,6 +118,15 @@ export function ApplyModal({ job, onClose }) {
       setDone(false);
     }
   }, [job, user]);
+
+  // Closing the dialog before the short submit delay cancels the submission
+  // instead of adding an application the visitor never confirmed.
+  useEffect(() => {
+    if (!job) {
+      clearTimeout(timerRef.current);
+      setLoading(false);
+    }
+  }, [job]);
 
   if (!job) return null;
 
@@ -127,7 +146,7 @@ export function ApplyModal({ job, onClose }) {
     if (Object.keys(next).length) return;
 
     setLoading(true);
-    setTimeout(() => {
+    timerRef.current = setTimeout(async () => {
       const record = addApplication({
         jobId: job.id,
         jobTitle: job.title,
@@ -140,7 +159,8 @@ export function ApplyModal({ job, onClose }) {
         note: form.note,
         cv: file ? { name: file.name, size: file.size } : null,
       });
-      if (file && record) db.saveFile(record.id, file);
+      if (file && record) await db.saveFile(record.id, file);
+      if (!mounted.current) return;
       setLoading(false);
       setDone(true);
       showToast(`${t('Application submitted')}: ${job.title}`);

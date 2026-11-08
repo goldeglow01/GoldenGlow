@@ -9,9 +9,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Keep the auth SDK in its own long-lived chunk so editing app code
-        // doesn't re-download it on every deploy.
-        manualChunks: {
-          supabase: ['@supabase/supabase-js'],
+        // doesn't re-download it on every deploy. Vite 8 (Rolldown) only
+        // accepts the function form of manualChunks.
+        manualChunks(id) {
+          if (id.includes('node_modules/@supabase/')) return 'supabase';
         },
       },
     },

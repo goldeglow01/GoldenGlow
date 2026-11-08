@@ -23,13 +23,20 @@
 const KEY = 'gg_db_v1';
 const CV_KEY = 'gg_cvs_v1';
 const CHANNEL_NAME = 'gg_db_sync';
+// Keep the browser store bounded — localStorage quotas are small and this is
+// demo storage, not an archive.
+const MAX_ROWS = 500;
 
 export const COLLECTIONS = ['accounts', 'applications', 'alerts', 'messages', 'jobs'];
 
 const blank = () => Object.fromEntries(COLLECTIONS.map((name) => [name, []]));
 
-const uid = (prefix) =>
-  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+const uid = (prefix) => {
+  const random =
+    globalThis.crypto?.randomUUID?.() ||
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${random}`;
+};
 
 function readStore() {
   try {
@@ -93,6 +100,47 @@ if (typeof window !== 'undefined') {
   channel?.addEventListener('message', reloadFromDisk);
 }
 
+/* ---------------------------------------------------------------- */
+/* Uploaded files (kept separately so the main store stays small)    */
+/* ---------------------------------------------------------------- */
+
+let fileQueue = Promise.resolve();
+
+function readFiles() {
+  try {
+    const raw = localStorage.getItem(CV_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeFile(id, value) {
+  const map = readFiles();
+  map[id] = value;
+  localStorage.setItem(CV_KEY, JSON.stringify(map));
+  return true;
+}
+
+function removeFile(id) {
+  try {
+    const map = readFiles();
+    if (!(id in map)) return;
+    delete map[id];
+    localStorage.setItem(CV_KEY, JSON.stringify(map));
+  } catch {
+    /* storage blocked */
+  }
+}
+
+function clearFiles() {
+  try {
+    localStorage.removeItem(CV_KEY);
+  } catch {
+    /* storage blocked */
+  }
+}
+
 export const db = {
   /** Subscribe to the whole store. Returns an unsubscribe function. */
   subscribe(listener) {
@@ -116,7 +164,7 @@ export const db = {
       ...item,
       id: item.id || uid(collection),
     };
-    persist({ ...state, [collection]: [entry, ...state[collection]] });
+    persist({ ...state, [collection]: [entry, ...state[collection]].slice(0, MAX_ROWS) });
     return entry;
   },
 
@@ -131,10 +179,13 @@ export const db = {
 
   remove(collection, id) {
     persist({ ...state, [collection]: state[collection].filter((row) => row.id !== id) });
+    // Do not leave an uploaded CV behind when its application row is deleted.
+    removeFile(id);
   },
 
   clear(collection) {
     persist({ ...state, [collection]: [] });
+    if (collection === 'applications') clearFiles();
   },
 
   /**
@@ -143,26 +194,33 @@ export const db = {
    * publicly. A production build should use private object storage instead.
    */
   saveFile(id, file) {
-    if (!file) return { stored: false, reason: 'empty' };
+    if (!file) return Promise.resolve({ stored: false, reason: 'empty' });
     const meta = { name: file.name, size: file.size, type: file.type || 'application/octet-stream' };
     const MAX = 260 * 1024;
-    if (file.size > MAX) return { stored: false, meta, reason: 'too-large' };
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const raw = localStorage.getItem(CV_KEY);
-          const map = raw ? JSON.parse(raw) : {};
-          map[id] = { ...meta, dataUrl: reader.result };
-          localStorage.setItem(CV_KEY, JSON.stringify(map));
-          resolve({ stored: true, meta });
-        } catch {
-          resolve({ stored: false, meta, reason: 'quota' });
-        }
-      };
-      reader.onerror = () => resolve({ stored: false, meta, reason: 'read' });
-      reader.readAsDataURL(file);
-    });
+    if (file.size > MAX) return Promise.resolve({ stored: false, meta, reason: 'too-large' });
+
+    // Serialise read-modify-write cycles so two uploads started at the same
+    // time cannot overwrite each other's map.
+    const task = fileQueue.then(
+      () =>
+        new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              resolve(writeFile(id, { ...meta, dataUrl: reader.result }) ? { stored: true, meta } : { stored: false, meta, reason: 'quota' });
+            } catch {
+              resolve({ stored: false, meta, reason: 'quota' });
+            }
+          };
+          reader.onerror = () => resolve({ stored: false, meta, reason: 'read' });
+          reader.readAsDataURL(file);
+        })
+    );
+    fileQueue = task.then(
+      () => undefined,
+      () => undefined
+    );
+    return task;
   },
 
   getFile(id) {
