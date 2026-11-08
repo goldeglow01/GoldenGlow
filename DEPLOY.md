@@ -11,7 +11,9 @@ billing, your environment variables.
 
 1. Sign in at <https://vercel.com> with the account that should own the site.
 2. Open <https://vercel.com/new> and choose **Import Git Repository**.
-3. Pick **Raisevane/GoldenGlow** (authorise the Vercel GitHub app for that account if asked).
+3. Pick the GoldenGlow repository from the list — **Raisevane/GoldenGlow** or
+   **goldeglow01/GoldenGlow**, whichever your account can see (authorise the Vercel GitHub
+   app for that account if asked). Both hold the same code.
 4. Leave the defaults. `vercel.json` in the repo already declares everything Vercel needs:
    - framework: `vite`
    - build command: `npm run build`
