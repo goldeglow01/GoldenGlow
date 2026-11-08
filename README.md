@@ -16,6 +16,8 @@ npm run preview  # serve the production build
 The marketing pages need no environment variables. Real accounts need two Supabase values (see
 **Accounts & sign-in** below); without them the sign-in screen runs in preview mode.
 
+**Source:** https://github.com/Raisevane/GoldenGlow
+
 **Live deployment:** https://goldenglow-steel.vercel.app (Vercel, production)
 
 Redeploy with:
@@ -23,6 +25,9 @@ Redeploy with:
 ```bash
 npx vercel deploy --prod --project goldenglow
 ```
+
+Deploying into the client's own Vercel account (import the repo, environment variables,
+custom domain) is covered step by step in [DEPLOY.md](DEPLOY.md).
 
 ## Accounts & sign-in
 

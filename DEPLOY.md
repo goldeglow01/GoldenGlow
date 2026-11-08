@@ -1,0 +1,103 @@
+# Deploying GoldenGlow to your own Vercel account
+
+This repository is deploy-ready. A clean clone installs and builds with no code changes
+(verified: 134 files, `npm ci` + `npm run build` → `dist/`), so you can import it into a
+Vercel account you own and get a site that is fully yours — your domain, your logs, your
+billing, your environment variables.
+
+---
+
+## 1. Import the repository (about 2 minutes)
+
+1. Sign in at <https://vercel.com> with the account that should own the site.
+2. Open <https://vercel.com/new> and choose **Import Git Repository**.
+3. Pick **Raisevane/GoldenGlow** (authorise the Vercel GitHub app for that account if asked).
+4. Leave the defaults. `vercel.json` in the repo already declares everything Vercel needs:
+   - framework: `vite`
+   - build command: `npm run build`
+   - output directory: `dist`
+   - SPA rewrite so `/jobs`, `/admin`, `/licences` etc. work on a hard refresh
+   - long-lived cache headers for `/assets` and `/images`
+5. Press **Deploy**. The first build takes roughly a minute.
+
+You get a URL such as `goldenglow-<something>.vercel.app`. That is the client site.
+
+## 2. Add the one required environment variable
+
+The contact form sends enquiries to `info@goldenglowqr.com` through the serverless
+function in `api/contact.js`, which needs the mailbox password.
+
+**Vercel → your project → Settings → Environment Variables**
+
+| Name        | Value                        | Environments       |
+| ----------- | ---------------------------- | ------------------ |
+| `SMTP_PASS` | password for `info@goldenglowqr.com` | Production, Preview |
+
+Optional overrides — these already have correct defaults, only set them to change behaviour:
+
+| Name        | Default                    | Purpose                       |
+| ----------- | -------------------------- | ----------------------------- |
+| `SMTP_USER` | `info@goldenglowqr.com`    | mailbox login                 |
+| `SMTP_HOST` | `mail.privateemail.com`    | Private Email SMTP host       |
+| `SMTP_PORT` | `465`                      | SSL port                      |
+| `MAIL_TO`   | `info@goldenglowqr.com`    | where enquiries are delivered |
+
+Then **Deployments → ⋯ → Redeploy**, because Vercel only applies new variables on a fresh
+deployment.
+
+Until `SMTP_PASS` is set the form does not fail silently: it records the enquiry, tells the
+visitor to email `info@goldenglowqr.com` directly, and the admin panel shows the message as
+not delivered.
+
+## 3. Optional: real sign-up / sign-in
+
+Accounts use Supabase email + password auth, called from the browser.
+
+1. Create a free project at <https://supabase.com>.
+2. **Authentication → Providers → Email**: enable it (turn off "Confirm email" if you want
+   instant sign-in without a mail step).
+3. Add these two variables in Vercel (both are safe to expose in the browser bundle):
+
+| Name                    | Where to find it                            |
+| ----------------------- | ------------------------------------------- |
+| `VITE_SUPABASE_URL`     | Supabase → Project Settings → API → URL     |
+| `VITE_SUPABASE_ANON_KEY`| Supabase → Project Settings → API → anon key|
+
+Never put the `service_role` key in a `VITE_` variable — it would be readable by every visitor.
+
+Without these the sign-in screen runs in a local preview mode; marketing pages are unaffected.
+
+## 4. Custom domain
+
+**Vercel → your project → Settings → Domains → Add**. Enter the domain, then create the DNS
+records Vercel shows (usually an `A` record for the apex and a `CNAME` for `www`). Vercel
+issues the TLS certificate automatically once DNS resolves.
+
+## 5. Everyday deployments
+
+Once imported, every push to `main` deploys to production automatically, and every pull
+request gets its own preview URL. No CLI is needed.
+
+Manual deploy from a checkout:
+
+```bash
+npm ci
+npx vercel --prod
+```
+
+## Local development
+
+```bash
+npm ci
+npm run dev     # http://127.0.0.1:5173
+```
+
+Copy `.env.example` to `.env.local` and fill in values if you want mail or real accounts
+locally. `.env*` files are gitignored and must never be committed.
+
+## What is NOT in the repository
+
+- Mailbox password and any API keys — they live only in Vercel environment variables.
+- Admin records, sign-ups, applications, saved jobs — these are stored in the browser
+  (localStorage) per device, so a newly imported deployment starts with an empty admin panel.
+  Export before switching domains if you need to carry data across.
