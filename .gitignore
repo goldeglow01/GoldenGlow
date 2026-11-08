@@ -1,0 +1,10 @@
+node_modules
+dist
+tmp
+.logs
+.DS_Store
+*.local
+.env
+.env.*
+.vercel
+.env*
