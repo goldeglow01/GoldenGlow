@@ -27,6 +27,17 @@
   transform: translateY(-2px);
 }
 
+/* Brand mark shown before the official profile link exists. */
+.footer__social-item.is-pending {
+  cursor: default;
+}
+
+.footer__social-item.is-pending:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #cbd5e1;
+  transform: none;
+}
+
 .footer__social-item svg {
   width: 17px;
   height: 17px;

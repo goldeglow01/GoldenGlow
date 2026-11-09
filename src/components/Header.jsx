@@ -9,7 +9,7 @@ import { industries, industryName } from '../data/industries';
 /** Social platforms shown in the top information bar. */
 const socials = [
   { key: 'facebook', label: 'Facebook', icon: 'facebook' },
-  { key: 'x', label: 'X (Twitter)', icon: 'twitter' },
+  { key: 'x', label: 'X', icon: 'x' },
   { key: 'instagram', label: 'Instagram', icon: 'instagram' },
   { key: 'tiktok', label: 'TikTok', icon: 'tiktok' },
   { key: 'linkedin', label: 'LinkedIn', icon: 'linkedin' },
@@ -172,7 +172,11 @@ export default function Header() {
                       aria-label={social.label}
                       title={social.label}
                     >
-                      <Icon name={social.icon} size={13} />
+                      <Icon
+                      name={social.icon}
+                      size={13}
+                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
+                    />
                     </a>
                   ) : (
                     <span
@@ -181,7 +185,11 @@ export default function Header() {
                       aria-label={`${social.label} — ${t('link coming soon')}`}
                       title={`${social.label} — ${t('link coming soon')}`}
                     >
-                      <Icon name={social.icon} size={13} />
+                      <Icon
+                      name={social.icon}
+                      size={13}
+                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
+                    />
                     </span>
                   );
                 })}
@@ -452,20 +460,38 @@ export default function Header() {
             </div>
 
             <div className="topbar__socials" style={{ marginTop: 16 }}>
-              {socials.map((social) =>
-                site.social[social.key] ? (
+              {socials.map((social) => {
+                const href = site.social[social.key];
+                return href ? (
                   <a
                     key={social.key}
                     className="topbar__social"
-                    href={site.social[social.key]}
+                    href={href}
                     target="_blank"
                     rel="noreferrer noopener"
                     aria-label={social.label}
                   >
-                    <Icon name={social.icon} size={13} />
+                    <Icon
+                      name={social.icon}
+                      size={13}
+                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
+                    />
                   </a>
-                ) : null
-              )}
+                ) : (
+                  <span
+                    key={social.key}
+                    className="topbar__social is-pending"
+                    aria-label={`${social.label} — ${t('link coming soon')}`}
+                    title={`${social.label} — ${t('link coming soon')}`}
+                  >
+                    <Icon
+                      name={social.icon}
+                      size={13}
+                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
+                    />
+                  </span>
+                );
+              })}
             </div>
           </div>
         </div>

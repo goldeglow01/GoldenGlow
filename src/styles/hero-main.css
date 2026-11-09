@@ -30,7 +30,7 @@
 }
 
 .topbar__social.is-pending {
-  opacity: 0.72;
+  opacity: 1;
   cursor: default;
 }
 

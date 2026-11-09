@@ -12,16 +12,12 @@ export default function Footer() {
 
   const socials = [
     { key: 'facebook', label: 'Facebook', icon: 'facebook' },
-    { key: 'x', label: 'X', icon: 'twitter' },
+    { key: 'x', label: 'X', icon: 'x' },
     { key: 'instagram', label: 'Instagram', icon: 'instagram' },
-    { key: 'linkedin', label: 'LinkedIn', icon: 'linkedin' },
     { key: 'tiktok', label: 'TikTok', icon: 'tiktok' },
-    { key: 'telegram', label: 'Telegram', icon: 'telegram' },
-    { key: 'github', label: 'GitHub', icon: 'github' },
+    { key: 'linkedin', label: 'LinkedIn', icon: 'linkedin' },
     { key: 'youtube', label: 'YouTube', icon: 'youtube' },
-    { key: 'pinterest', label: 'Pinterest', icon: 'pinterest' },
-    { key: 'viber', label: 'Viber', icon: 'viber' },
-  ].filter((social) => site.social[social.key]);
+  ];
 
   return (
     <footer className="footer">
@@ -61,27 +57,42 @@ export default function Footer() {
               </span>
             </div>
 
-            {socials.length > 0 ? (
-              <div className="footer__social">
-                {socials.map((social) => (
+            <div className="footer__social">
+              {socials.map((social) => {
+                const href = site.social[social.key];
+                const content = (
+                  <>
+                    <Icon
+                      name={social.icon}
+                      size={16}
+                      style={social.key === 'tiktok' ? { width: 18, height: 18 } : undefined}
+                    />
+                    <span className="footer__social-label">{social.label}</span>
+                  </>
+                );
+                return href ? (
                   <a
                     key={social.key}
                     className="footer__social-item"
-                    href={site.social[social.key]}
+                    href={href}
                     target="_blank"
                     rel="noreferrer noopener"
                     aria-label={social.label}
                   >
-                    <Icon name={social.icon} size={16} />
-                    <span className="footer__social-label">{social.label}</span>
+                    {content}
                   </a>
-                ))}
-              </div>
-            ) : (
-              <p style={{ fontSize: 11, color: '#7a6e78', marginTop: 14 }}>
-                {t('Social media links will appear here once official accounts are added.')}
-              </p>
-            )}
+                ) : (
+                  <span
+                    key={social.key}
+                    className="footer__social-item is-pending"
+                    aria-label={`${social.label} — ${t('link coming soon')}`}
+                    title={`${social.label} — ${t('link coming soon')}`}
+                  >
+                    {content}
+                  </span>
+                );
+              })}
+            </div>
           </div>
 
           <div>
