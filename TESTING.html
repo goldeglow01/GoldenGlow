@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoldenGlow — Acceptance Test Plan</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; background: #f6f3f0; color: #26161f; font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 48px 40px 80px; background: #fff; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 1rem; color: #7a1b45; }
+  h2 { font-size: 1.4rem; margin: 2.4rem 0 .8rem; padding-bottom: .35rem; border-bottom: 2px solid #7a1b45; color: #7a1b45; page-break-after: avoid; }
+  h3 { font-size: 1.08rem; margin: 1.8rem 0 .5rem; color: #26161f; page-break-after: avoid; }
+  p, li { max-width: 75ch; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0 1.4rem; font-size: .94rem; page-break-inside: avoid; }
+  th, td { border: 1px solid #d8cfd4; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #f4e9ee; }
+  code { background: #f2eef0; padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  pre { background: #f7f5f6; border: 1px solid #e2dade; padding: 14px; border-radius: 8px; overflow-x: auto; page-break-inside: avoid; }
+  blockquote { margin: 1rem 0; padding: 10px 16px; border-left: 4px solid #7a1b45; background: #faf6f8; }
+  input[type=checkbox] { width: 16px; height: 16px; }
+  hr { border: 0; border-top: 1px solid #e3dadd; margin: 2rem 0; }
+  strong { color: #3f1228; }
+  @media print {
+    body { background: #fff; }
+    main { max-width: none; padding: 0; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: auto; }
+    a { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<main>
+<h1>GoldenGlow Website — Acceptance Test Plan</h1>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Version</strong></td>
+<td>1.0</td>
+</tr>
+<tr>
+<td><strong>Date</strong></td>
+<td>9 November 2026</td>
+</tr>
+<tr>
+<td><strong>Site under test</strong></td>
+<td><a href="https://goldenglowqr.com">https://goldenglowqr.com</a> (production)</td>
+</tr>
+<tr>
+<td><strong>Roles</strong></td>
+<td>Worker · Employer · Admin</td>
+</tr>
+<tr>
+<td><strong>Tester</strong></td>
+<td>______________________________</td>
+</tr>
+<tr>
+<td><strong>Prepared by</strong></td>
+<td>GoldenGlow</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>1. Purpose</h2>
+<p>This plan lets an independent tester verify the GoldenGlow website end to end using <strong>only the
+website</strong> — no server, database or Supabase access is required.</p>
+<p>You will test three roles:</p>
+<ol>
+<li><strong>Worker</strong> — create a profile, save jobs, apply with a CV, track applications.</li>
+<li><strong>Employer</strong> — manage a company profile, post and edit jobs, review applications.</li>
+<li><strong>Admin</strong> — review accounts and jobs, approve/reject postings, manage applications, enquiries
+and saved searches.</li>
+</ol>
+<p>Every test case has an ID, steps, the expected result and a result box. Record
+<strong>Pass / Fail / Blocked</strong> and attach a screenshot or short recording for every failure.</p>
+<blockquote>
+<p><strong>Important:</strong> This is the live production site. Only create data prefixed with <strong><code>QA-</code></strong> and
+only delete records you created yourself. Never upload a real passport, Iqama, CV or any real
+personal document. Use a dummy PDF for CV tests.</p>
+</blockquote>
+<hr>
+<h2>2. Accounts and access</h2>
+<p>All three roles sign in through the same page: <strong><a href="https://goldenglowqr.com/login">https://goldenglowqr.com/login</a></strong>
+There is no separate admin URL or admin password. The admin account is a normal account whose
+profile has been given the admin role by GoldenGlow.</p>
+<h3>2.1 Credentials</h3>
+<p>GoldenGlow will fill in the admin row before hand-off. For worker and employer you can either use
+accounts supplied by GoldenGlow or register your own (see 2.2).</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Email</th>
+<th>Password</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Worker</td>
+<td>______________________________</td>
+<td>____________________</td>
+<td>Supplied, or self-register</td>
+</tr>
+<tr>
+<td>Employer</td>
+<td>______________________________</td>
+<td>____________________</td>
+<td>Supplied, or self-register</td>
+</tr>
+<tr>
+<td><strong>Admin</strong></td>
+<td>______________________________</td>
+<td>____________________</td>
+<td>Supplied separately by GoldenGlow</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>The admin account is for admin tests only. Do not use it for the worker or employer cases — use
+separate worker and employer accounts, otherwise their dashboards will not contain the test
+data you expect.</p>
+</blockquote>
+<p>Never share these credentials or change the admin password.</p>
+<h3>2.2 Registering your own worker / employer accounts</h3>
+<p>If GoldenGlow only supplied the admin account:</p>
+<ol>
+<li>Use your own email with a plus-address, for example:<ul>
+<li><code>yourname+gg-worker@gmail.com</code></li>
+<li><code>yourname+gg-employer@gmail.com</code></li>
+</ul>
+</li>
+<li>Go to <strong>/signup</strong> and pick <strong>Worker</strong> or <strong>Employer</strong>.</li>
+<li>Fill in the form and submit.</li>
+<li>If a “Check your inbox” screen appears, open the confirmation email (sender
+<code>info@goldenglowqr.com</code>) and click the link. Check spam if it is not there within a few
+minutes.</li>
+<li>Sign in at <strong>/login</strong>.</li>
+</ol>
+<p>Confirmation emails are rate-limited. Do not re-submit more than two or three times; if you see
+“Too many attempts”, wait and use an account that is already confirmed.</p>
+<h3>2.3 Using three roles at once</h3>
+<p>Use <strong>three different browsers or three separate browser profiles</strong>, for example Chrome, Edge and
+Firefox. Multiple incognito windows in the same browser can share a session.</p>
+<table>
+<thead>
+<tr>
+<th>Window</th>
+<th>Signed in as</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Window 1</td>
+<td>Worker</td>
+</tr>
+<tr>
+<td>Window 2</td>
+<td>Employer</td>
+</tr>
+<tr>
+<td>Window 3</td>
+<td>Admin</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>3. Before you start</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Use a current version of Chrome, Edge, Firefox or Safari.</li>
+<li><input disabled="" type="checkbox"> Set up the three windows described in 2.3.</li>
+<li><input disabled="" type="checkbox"> Have a <strong>dummy PDF</strong> ready (under 5 MB) to use as a CV. It must not contain real personal
+data.</li>
+<li><input disabled="" type="checkbox"> Use test data only, for example <code>QA – Electrician</code>, <code>QA – Test Employer Ltd</code>,
+<code>qa-worker@…</code>, <code>qa-employer@…</code>.</li>
+<li><input disabled="" type="checkbox"> Allow pop-ups for <code>goldenglowqr.com</code> (the admin CV link opens in a new tab).</li>
+<li><input disabled="" type="checkbox"> Optional: open the browser developer console (F12) so you can note any red errors.</li>
+<li><input disabled="" type="checkbox"> Take a screenshot for every failed or blocked test.</li>
+<li><input disabled="" type="checkbox"> Do not change or delete data you did not create.</li>
+<li><input disabled="" type="checkbox"> Do not use the site with real candidate or worker documents.</li>
+</ul>
+<h3>3.1 Site behaviour you should expect (not bugs)</h3>
+<ul>
+<li>The vacancies currently on the site may include <strong>demo data</strong>, which shows a <strong>“Sample listing”</strong>
+badge. Jobs created by an employer become public only after an admin verifies them, and then show
+<strong>“Verified”</strong>. Your job counts may differ from the examples in this document.</li>
+<li>The jobs page shows <strong>6 jobs initially</strong>; <strong>Load More</strong> reveals the rest.</li>
+<li>Confirmation and contact emails are sent from <code>info@goldenglowqr.com</code>. They may take a minute
+and can land in spam on the first send.</li>
+<li>Status changes made by another role may require a <strong>page reload</strong> to appear instantly.</li>
+<li>A CV link in the admin panel is a <strong>short-lived signed link</strong>; if it expires, click the CV
+filename again.</li>
+<li>The contact form may say the enquiry was saved but email delivery is not switched on. Record it
+as an observation; the enquiry should still appear in the admin panel.</li>
+</ul>
+<hr>
+<h2>4. How to record results</h2>
+<p>For every case mark one of:</p>
+<ul>
+<li><strong>Pass</strong> — behaves exactly as described.</li>
+<li><strong>Fail</strong> — differs from the expected result. Attach a screenshot and note the browser.</li>
+<li><strong>Blocked</strong> — cannot be completed (say why, e.g. no confirmation email received).</li>
+</ul>
+<p>Use this bug format for every failure:</p>
+<pre><code>Bug ID:
+Title:
+Role:            Worker / Employer / Admin / Public
+Page URL:
+Browser / OS:
+Steps to reproduce:
+1.
+2.
+3.
+Expected result:
+Actual result:
+Severity:        Critical / High / Medium / Low
+Evidence:        screenshot / recording / console error
+Was this data created by you?   Yes / No
+</code></pre>
+<p>Severity guide:</p>
+<ul>
+<li><strong>Critical</strong> — cannot sign in, cannot apply, data lost, another role’s data visible.</li>
+<li><strong>High</strong> — a main task fails (post job, verify job, open CV, update status).</li>
+<li><strong>Medium</strong> — validation, copy, layout or persistence problem with a workaround.</li>
+<li><strong>Low</strong> — cosmetic or minor wording issue.</li>
+</ul>
+<hr>
+<h2>5. Public website tests</h2>
+<h3>PUB-01 — Homepage loads</h3>
+<ol>
+<li>Open <a href="https://goldenglowqr.com/">https://goldenglowqr.com/</a></li>
+<li>Scroll from top to bottom.</li>
+</ol>
+<p><strong>Expected:</strong> Hero slider, client logos, statistics, “Why GoldenGlow”, industries, about, employer
+services, jobs, process, countries, showcase, 3D globe and contact section all render. No blank
+sections or broken images.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-02 — Top navigation</h3>
+<ol>
+<li>On the homepage, click <strong>About</strong>, <strong>Industries</strong>, <strong>Countries</strong>, <strong>Quick Links → Contact Us</strong>.</li>
+<li>Use <strong>Jobs</strong>, <strong>Team</strong>, <strong>Contact</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> Hash links scroll to the correct section and leave the header visible above it.
+Only one main menu item is highlighted at a time. Jobs/Team open their pages.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-03 — Language switch</h3>
+<ol>
+<li>Click <strong>العربية</strong> in the top bar.</li>
+<li>Reload the page.</li>
+<li>Switch back to <strong>English</strong> and reload.</li>
+</ol>
+<p><strong>Expected:</strong> The whole page switches to Arabic and right-to-left layout; the choice survives a
+reload. English restores the left-to-right layout.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-04 — Mobile menu</h3>
+<ol>
+<li>Narrow the browser to a phone width (around 390 px) or use device mode.</li>
+<li>Open the hamburger menu.</li>
+<li>Expand <strong>Industries</strong> and choose an industry.</li>
+<li>Reopen the menu, tap <strong>About</strong> (or another section link).</li>
+<li>Press Escape while the menu is open.</li>
+</ol>
+<p><strong>Expected:</strong> The drawer opens and closes cleanly; choosing a link closes it and navigates/scrolls.
+The page can be used without horizontal scrolling.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-05 — Jobs list</h3>
+<ol>
+<li>Open <strong>/jobs</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> The page shows a count such as “Showing 6 of 10 jobs found” (your count may
+differ). Any demo job has a <strong>Sample listing</strong> badge. The search box and five filters are visible.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-06 — Search and filters</h3>
+<ol>
+<li>Search for <code>electrician</code>.</li>
+<li>Clear the search.</li>
+<li>Filter by Industry, then City, then Experience, then Employment type.</li>
+<li>Combine two filters.</li>
+<li>Click <strong>Clear filters</strong>.</li>
+<li>Choose a filter that matches nothing.</li>
+</ol>
+<p><strong>Expected:</strong> Counts update correctly; the URL reflects the filters on /jobs; the empty state
+offers <strong>Clear filters</strong> and works.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-07 — Salary filter and sort</h3>
+<ol>
+<li>Choose each salary band.</li>
+<li>Sort by <strong>Salary: high to low</strong>.</li>
+<li>Sort by <strong>Newest</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> Results respect the selected band and order; no result is duplicated or missing
+unexpectedly.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-08 — Load more</h3>
+<ol>
+<li>Open <strong>/jobs</strong> with no filters.</li>
+<li>Click <strong>Load More</strong> until it disappears.</li>
+</ol>
+<p><strong>Expected:</strong> The list grows by 6 each time and eventually shows all 10 jobs. The button disappears
+when everything is shown.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-09 — Job detail modal</h3>
+<ol>
+<li>Click <strong>View Details</strong> on a job.</li>
+<li>Read the details.</li>
+<li>Press Escape.</li>
+</ol>
+<p><strong>Expected:</strong> A modal shows title, company, city, industry, type, experience, salary, posted date,
+description and requirements. It closes on Escape, the close button and the backdrop.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-10 — Signed-out job actions</h3>
+<ol>
+<li>In a signed-out window, click <strong>Save</strong> on a job.</li>
+<li>Click <strong>Apply Now</strong> on a job.</li>
+</ol>
+<p><strong>Expected:</strong> Save works and shows a toast. Apply opens a sign-in prompt; after signing in as a
+worker you are returned to the jobs page.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-11 — Licences</h3>
+<ol>
+<li>Open <strong>/licences</strong>.</li>
+<li>Open a document.</li>
+<li>Use <strong>Open full size</strong> (if present) and close it.</li>
+</ol>
+<p><strong>Expected:</strong> Five licence documents display; each opens in a modal and can be viewed full size.
+No image is missing or unreadable.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-12 — Team and legal pages</h3>
+<ol>
+<li>Open <strong>/team</strong>.</li>
+<li>Open <code>/legal/privacy</code>, <code>/legal/terms</code>, <code>/legal/cookies</code>.</li>
+<li>Open an unknown URL such as <code>/this-page-does-not-exist</code>.</li>
+</ol>
+<p><strong>Expected:</strong> Team profiles render. All legal pages render with readable text. Unknown URLs show
+the 404 page with a working <strong>Home</strong> link.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-13 — Footer, WhatsApp and map</h3>
+<ol>
+<li>Scroll to the footer.</li>
+<li>Click a few footer links.</li>
+<li>Click the WhatsApp button; close the popup if one appears.</li>
+<li>On the homepage contact section, check the office details and map.</li>
+</ol>
+<p><strong>Expected:</strong> Footer links work. WhatsApp opens the chat link or shows the configured popup.
+Address, hours and map render; <strong>Get directions</strong> opens Google Maps.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-14 — Contact form validation</h3>
+<ol>
+<li>On the homepage contact form, submit empty.</li>
+<li>Submit an invalid email.</li>
+<li>Enter a short message (under 20 characters).</li>
+<li>Complete all required fields correctly and submit.</li>
+</ol>
+<p><strong>Expected:</strong> Each invalid attempt shows inline errors and does not send. The valid attempt shows a
+success message (or a clear “saved but email delivery not switched on” message) and clears the
+form.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>PUB-15 — Job alert</h3>
+<ol>
+<li>On <strong>/jobs</strong>, enter your email under “Email me jobs like this”.</li>
+<li>Save the search.</li>
+<li>Change a filter and save again.</li>
+</ol>
+<p><strong>Expected:</strong> A confirmation message appears; the form clears; saving again after changing filters
+is allowed.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h2>6. Worker tests</h2>
+<blockquote>
+<p>Sign in as the <strong>worker</strong> account in Window 1. If you self-registered, confirm the email first.</p>
+</blockquote>
+<h3>WRK-01 — Sign in and dashboard</h3>
+<ol>
+<li>Sign in at <strong>/login</strong>.</li>
+<li>Observe the landing page and header.</li>
+</ol>
+<p><strong>Expected:</strong> You land on <strong>/dashboard/worker</strong>. The header shows <strong>Dashboard</strong> and <strong>Sign Out</strong>.
+The tabs are Dashboard, My profile, Saved jobs, Application status.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-02 — Profile prefilled correctly</h3>
+<ol>
+<li>Open <strong>My profile</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> Your full name and the <strong>trade/job title</strong> entered at sign-up are already filled in.
+(If the trade is empty, record a bug.)</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-03 — Profile edits persist</h3>
+<ol>
+<li>Change the trade, phone and “Skills &amp; experience”.</li>
+<li>Click <strong>Save changes</strong>.</li>
+<li>Reload the page.</li>
+</ol>
+<p><strong>Expected:</strong> A “Saved” message appears and all edits are still present after reload.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-04 — Save and remove a job</h3>
+<ol>
+<li>Open <strong>/jobs</strong>.</li>
+<li>Click the bookmark on a job.</li>
+<li>Open <strong>Saved jobs</strong> in the dashboard.</li>
+<li>Click <strong>Remove</strong>.</li>
+<li>Reload.</li>
+</ol>
+<p><strong>Expected:</strong> The saved job appears in the dashboard and survives a reload. <strong>Remove</strong> deletes it
+and it stays removed after reload.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-05 — Apply to a job with a CV</h3>
+<ol>
+<li>On <strong>/jobs</strong>, open a job and click <strong>Apply Now</strong>.</li>
+<li>Confirm name and email are prefilled.</li>
+<li>Enter a phone number.</li>
+<li>Attach your dummy PDF CV.</li>
+<li>Add a cover note.</li>
+<li>Submit.</li>
+</ol>
+<p><strong>Expected:</strong> “Application submitted” appears. No error toast about the CV. The application is
+listed under <strong>Application status</strong> with job title, company, city and <strong>Submitted</strong>.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-06 — Duplicate application</h3>
+<ol>
+<li>Open the same job again.</li>
+<li>Click <strong>Apply Now</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> An <strong>“Already applied”</strong> dialog appears with a link to the worker dashboard; no second
+application is created.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-07 — Invalid CV handling</h3>
+<ol>
+<li>Apply to a different job.</li>
+<li>Try a file that is not PDF/DOC/DOCX, or a PDF larger than 5 MB.</li>
+<li>Submit.</li>
+</ol>
+<p><strong>Expected:</strong> The application is still submitted, but a clear message says the CV could not be
+uploaded. Do not upload real documents for this test.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-08 — Saved jobs from signed-out browsing</h3>
+<ol>
+<li>In the <strong>same browser window/profile</strong> you use for the worker, sign out.</li>
+<li>Save two jobs while signed out.</li>
+<li>Sign back in as the worker.</li>
+<li>Open <strong>Saved jobs</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> The jobs saved before signing in are merged into the account and appear in the list.
+(This works per browser profile, so do not switch browsers between steps.)</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-09 — Role isolation</h3>
+<ol>
+<li>While signed in as the worker, open <strong>/dashboard/employer</strong>.</li>
+<li>Open <strong>/admin</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> The employer dashboard redirects you to your worker dashboard. <code>/admin</code> shows a
+<strong>“Not authorized”</strong> screen and no admin data.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>WRK-10 — Persistence after sign-out</h3>
+<ol>
+<li>Sign out.</li>
+<li>Sign back in.</li>
+<li>Check <strong>Saved jobs</strong> and <strong>Application status</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> Saved jobs and applications are still there.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h2>7. Employer tests</h2>
+<blockquote>
+<p>Sign in as the <strong>employer</strong> account in Window 2. If you self-registered, confirm the email first.</p>
+</blockquote>
+<h3>EMP-01 — Sign in and dashboard</h3>
+<ol>
+<li>Sign in at <strong>/login</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> You land on <strong>/dashboard/employer</strong>. Tabs are Dashboard, Post a job, My Jobs,
+Applications.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-02 — Company profile persists</h3>
+<ol>
+<li>On <strong>Dashboard</strong>, edit company name, city, industry, website and about.</li>
+<li>Click <strong>Save changes</strong>.</li>
+<li>Reload.</li>
+</ol>
+<p><strong>Expected:</strong> The values are saved and remain after reload.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-03 — Post-job validation</h3>
+<ol>
+<li>Open <strong>Post a job</strong>.</li>
+<li>Submit empty.</li>
+<li>Enter a one-character title and submit.</li>
+<li>Enter a description shorter than 20 characters and submit.</li>
+</ol>
+<p><strong>Expected:</strong> Inline errors explain what is missing. Nothing is submitted until the form is valid.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-04 — Post a job</h3>
+<ol>
+<li>Complete the form with a title such as <strong><code>QA – Electrician 9 Nov</code></strong>.</li>
+<li>Choose industry, city, type and experience.</li>
+<li>Enter a salary and a description of at least 20 characters.</li>
+<li>Submit.</li>
+</ol>
+<p><strong>Expected:</strong> “Job submitted for review” appears. The job appears in <strong>My Jobs</strong> as
+<strong>Pending review</strong>.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-05 — Pending jobs are not public</h3>
+<ol>
+<li>Open <strong>/jobs</strong> in any window.</li>
+<li>Search for the job title.</li>
+</ol>
+<p><strong>Expected:</strong> The pending job is <strong>not</strong> visible publicly.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-06 — Edit sends the job back to review</h3>
+<ol>
+<li>In <strong>My Jobs</strong>, click <strong>Edit</strong> on your QA job.</li>
+<li>Change the title, for example <strong><code>QA – Senior Electrician 9 Nov</code></strong>.</li>
+<li>Click <strong>Update listing</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> The job remains <strong>Pending review</strong> (content edits require re-approval).</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-07 — Delete your own job</h3>
+<ol>
+<li>In <strong>My Jobs</strong>, click the trash icon on the <strong>QA job only</strong>.</li>
+<li>Reload.</li>
+</ol>
+<p><strong>Expected:</strong> The QA job disappears. Do not delete any other job.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-08 — Employer applications</h3>
+<blockquote>
+<p>Complete the cross-role flow in section 9 first.</p>
+</blockquote>
+<ol>
+<li>Open the <strong>Applications</strong> tab.</li>
+<li>Click <strong>Shortlist</strong> on the QA application.</li>
+</ol>
+<p><strong>Expected:</strong> The worker’s application is listed with name, email, job and city. <strong>Shortlist</strong>
+updates the status.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>EMP-09 — Role isolation</h3>
+<ol>
+<li>While signed in as the employer, open <strong>/dashboard/worker</strong>.</li>
+<li>Open <strong>/admin</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> The worker dashboard redirects you to the employer dashboard. <code>/admin</code> is not
+available.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h2>8. Admin tests</h2>
+<blockquote>
+<p>Sign in as the <strong>admin</strong> account supplied by GoldenGlow in Window 3.</p>
+</blockquote>
+<h3>ADM-01 — Admin sign-in</h3>
+<ol>
+<li>Sign in at <strong>/login</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> You land on <strong>/admin</strong>, not on the employer or worker dashboard. The admin menu shows
+Overview, Accounts, Applications, Jobs, Saved searches, Enquiries.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-02 — Overview</h3>
+<ol>
+<li>Open <strong>Overview</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> Tiles show Accounts, Workers, Employers, Applications, Jobs live (with pending
+count), Saved searches and Enquiries. Latest activity lists recent records.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-03 — Accounts and CSV</h3>
+<ol>
+<li>Open <strong>Accounts</strong>.</li>
+<li>Search for part of a known name or email.</li>
+<li>Click <strong>Export CSV</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> The list filters correctly. A file <code>goldenglow-accounts.csv</code> downloads and contains
+the visible accounts.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-04 — Create a job as admin</h3>
+<ol>
+<li>Open <strong>Jobs</strong>.</li>
+<li>Fill the <strong>Post a job</strong> form with a <strong><code>QA – Admin Test Job</code></strong> title and a valid description.</li>
+<li>Submit.</li>
+</ol>
+<p><strong>Expected:</strong> The job is saved as <strong>pending</strong> and appears in the list. Demo jobs show a
+<strong>Sample</strong> pill; your new job does not.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-05 — Verify, reject and delete a job</h3>
+<ol>
+<li>Click <strong>Verify</strong> on your QA admin job.</li>
+<li>Open <strong>/jobs</strong> publicly and search for it.</li>
+<li>Return to admin, click <strong>Reject</strong> on the same QA job.</li>
+<li>Check the public jobs page again.</li>
+<li>Delete the QA job with the trash icon.</li>
+</ol>
+<p><strong>Expected:</strong> Verified jobs appear publicly with a <strong>Verified</strong> badge. Rejected jobs disappear from
+the public list. Delete removes the job. Only change jobs you created.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-06 — Applications: status, note, CV</h3>
+<blockquote>
+<p>Complete the cross-role flow in section 9 first.</p>
+</blockquote>
+<ol>
+<li>Open <strong>Applications</strong>.</li>
+<li>Change the QA application’s status to <strong>Shortlisted</strong>.</li>
+<li>Click <strong>Note</strong> and read the cover note.</li>
+<li>Click the CV filename.</li>
+<li>Close the new tab.</li>
+</ol>
+<p><strong>Expected:</strong> The status changes. The note matches what the worker typed. The CV opens in a new tab
+through a short-lived link. Do not delete real applications.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-07 — Delete a QA application</h3>
+<ol>
+<li>On <strong>Applications</strong>, click the trash icon for the QA application you created.</li>
+</ol>
+<p><strong>Expected:</strong> The application disappears from the admin panel and from the worker dashboard after a
+reload. Only delete applications you created during this test.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-08 — Saved searches</h3>
+<ol>
+<li>In a signed-out window, save a job alert on <strong>/jobs</strong> using a <strong>QA email</strong>.</li>
+<li>In the admin panel, open <strong>Saved searches</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> The QA email and its filters appear. Delete only the QA search.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-09 — Enquiries</h3>
+<ol>
+<li>Submit the homepage contact form with a <strong>QA name and QA email</strong>.</li>
+<li>In the admin panel, open <strong>Enquiries</strong>.</li>
+<li>Change the status to <strong>In progress</strong>, then <strong>Handled</strong>.</li>
+<li>Click <strong>Reply</strong> (it should open your email client).</li>
+<li>Delete the QA enquiry.</li>
+</ol>
+<p><strong>Expected:</strong> The enquiry appears with name, email, phone, company, city and message. Status changes
+save. Reply opens a mail client. Delete removes it.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>ADM-10 — Admin access is enforced</h3>
+<ol>
+<li>In the worker window, open <strong>/admin</strong>.</li>
+<li>In the employer window, open <strong>/admin</strong>.</li>
+</ol>
+<p><strong>Expected:</strong> Both show <strong>“Not authorized”</strong> and no admin data. Only the admin account can use the
+admin panel.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h2>9. End-to-end cross-role flow (most important test)</h2>
+<p>Use all three windows. Create every record with a <code>QA-</code> prefix so it can be cleaned up.</p>
+<ol>
+<li><strong>Employer</strong> posts a job: <strong><code>QA – Cross Role Electrician</code></strong>.<ul>
+<li>Expected: <strong>Pending review</strong> in My Jobs; not public.</li>
+</ul>
+</li>
+<li><strong>Admin</strong> → Jobs → <strong>Verify</strong> the QA job.<ul>
+<li>Expected: status <strong>Verified</strong>.</li>
+</ul>
+</li>
+<li><strong>Worker</strong> opens <strong>/jobs</strong> and searches for the QA job.<ul>
+<li>Expected: the job is public with a <strong>Verified</strong> badge.</li>
+</ul>
+</li>
+<li><strong>Worker</strong> applies, entering a phone number, attaching the dummy PDF and a cover note.<ul>
+<li>Expected: <strong>Application submitted</strong>; the application appears in the worker dashboard as
+<strong>Submitted</strong>.</li>
+</ul>
+</li>
+<li><strong>Employer</strong> → Applications.<ul>
+<li>Expected: the worker’s application appears with the cover note.</li>
+</ul>
+</li>
+<li><strong>Employer</strong> clicks <strong>Shortlist</strong>.<ul>
+<li>Expected: status becomes <strong>Shortlist</strong>.</li>
+</ul>
+</li>
+<li><strong>Worker</strong> reloads <strong>Application status</strong>.<ul>
+<li>Expected: the status shows <strong>Shortlist/Shortlisted</strong>.</li>
+</ul>
+</li>
+<li><strong>Admin</strong> opens Applications.<ul>
+<li>Expected: the same application and updated status are visible.</li>
+</ul>
+</li>
+<li><strong>Admin</strong> changes the status to <strong>Hired</strong>.<ul>
+<li>Expected: worker sees <strong>Hired</strong> after a reload.</li>
+</ul>
+</li>
+<li><strong>Admin</strong> deletes the QA application, then deletes the QA job.<ul>
+<li>Expected: the application disappears from the worker dashboard; the job disappears from
+<code>/jobs</code>.</li>
+</ul>
+</li>
+</ol>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h2>10. Responsive and accessibility checks</h2>
+<h3>RES-01 — No horizontal scrolling</h3>
+<ol>
+<li>At 390 px width, open the homepage, /jobs, /login, /licences and a legal page.</li>
+</ol>
+<p><strong>Expected:</strong> No sideways scrolling and no content cut off. Buttons remain usable.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>RES-02 — Forms on mobile</h3>
+<ol>
+<li>At 390 px, fill in the sign-up, contact and apply forms.</li>
+</ol>
+<p><strong>Expected:</strong> Every field and button is reachable; the on-screen keyboard does not hide the submit
+button; errors are visible.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>RES-03 — Keyboard and Escape</h3>
+<ol>
+<li>Use Tab to move through the header, forms and modals.</li>
+<li>Open a job modal, the mobile menu and a licence modal; press Escape on each.</li>
+</ol>
+<p><strong>Expected:</strong> Focus is visible, focus does not get trapped outside an open modal, and Escape closes
+it and returns focus sensibly.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h3>RES-04 — Reduced motion / zoom</h3>
+<ol>
+<li>Set browser zoom to 200%.</li>
+<li>If available, enable “reduce motion” in the operating system.</li>
+</ol>
+<p><strong>Expected:</strong> Content remains readable and usable. The hero carousel and globe do not prevent use;
+animations are reduced or static.</p>
+<p><strong>Result:</strong> ☐ Pass ☐ Fail ☐ Blocked<br><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h2>11. Privacy and permission checks</h2>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Test</th>
+<th>Expected</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SEC-01</td>
+<td>Worker opens <code>/admin</code></td>
+<td>“Not authorized”, no data</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+<tr>
+<td>SEC-02</td>
+<td>Employer opens <code>/admin</code></td>
+<td>“Not authorized”, no data</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+<tr>
+<td>SEC-03</td>
+<td>Employer looks at Applications</td>
+<td>Only applications to that employer’s own jobs</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+<tr>
+<td>SEC-04</td>
+<td>Worker looks at Applications</td>
+<td>Only that worker’s own applications</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+<tr>
+<td>SEC-05</td>
+<td>Signed-out visitor opens <code>/dashboard/worker</code></td>
+<td>Sign-in prompt, no personal data</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+<tr>
+<td>SEC-06</td>
+<td>Signed-out visitor opens <code>/dashboard/employer</code></td>
+<td>Sign-in prompt, no company data</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+<tr>
+<td>SEC-07</td>
+<td>Admin opens a CV</td>
+<td>New tab with the CV; the link is not a permanent public URL</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+<tr>
+<td>SEC-08</td>
+<td>A second worker/employer account (optional)</td>
+<td>Cannot see the QA worker’s application or documents</td>
+<td>☐ Pass ☐ Fail ☐ Blocked</td>
+</tr>
+</tbody></table>
+<p><strong>Notes:</strong> ______________________________________________</p>
+<hr>
+<h2>12. Clean-up after testing</h2>
+<p>The tester cannot delete accounts. Clean up through the website where possible, and send the
+remaining list to GoldenGlow.</p>
+<ul>
+<li><input disabled="" type="checkbox"> Delete every <strong>QA job</strong> you created (Admin → Jobs → trash).</li>
+<li><input disabled="" type="checkbox"> Delete every <strong>QA application</strong> you created (Admin → Applications → trash).</li>
+<li><input disabled="" type="checkbox"> Delete every <strong>QA saved search</strong> (Admin → Saved searches → trash).</li>
+<li><input disabled="" type="checkbox"> Delete every <strong>QA enquiry</strong> (Admin → Enquiries → trash).</li>
+<li><input disabled="" type="checkbox"> Remove any test files or screenshots containing credentials from your device.</li>
+<li><input disabled="" type="checkbox"> Send GoldenGlow the email addresses of any accounts you registered so they can be removed:</li>
+</ul>
+<pre><code>Worker account:   ______________________________
+Employer account: ______________________________
+Admin account:    ______________________________  (supplied by GoldenGlow)
+</code></pre>
+<p>Do <strong>not</strong> delete demo jobs, existing applications or enquiries that are not prefixed <code>QA-</code>.</p>
+<hr>
+<h2>13. Final summary and sign-off</h2>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Total cases</th>
+<th>Pass</th>
+<th>Fail</th>
+<th>Blocked</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Public website</td>
+<td>15</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Worker</td>
+<td>10</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Employer</td>
+<td>9</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Admin</td>
+<td>10</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Cross-role flow</td>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Responsive / accessibility</td>
+<td>4</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Privacy / permissions</td>
+<td>8</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>57</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>Overall result:</strong> ☐ Ready to launch ☐ Ready with minor issues ☐ Not ready</p>
+<p><strong>Open critical/high issues:</strong></p>
+<pre><code>1.
+2.
+3.
+</code></pre>
+<p><strong>Tester name:</strong> ______________________________<br><strong>Date:</strong> ______________________________<br><strong>Signature:</strong> ______________________________</p>
+</main>
+</body>
+</html>
