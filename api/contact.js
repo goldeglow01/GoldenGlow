@@ -151,6 +151,14 @@ export default async function handler(req, res) {
   if (!emailPattern.test(email)) {
     return res.status(400).json({ error: 'Please provide a valid email address.' });
   }
+  if (message.length < 20) {
+    return res.status(400).json({ error: 'Please write at least 20 characters.' });
+  }
+  // These columns carry a no-markup check in Postgres; answer with a clear 400
+  // instead of letting the insert fail as a generic server error.
+  if ([name, phone, company, city, inquiry, industry].some((value) => /[<>]/.test(value))) {
+    return res.status(400).json({ error: 'Please remove angle brackets (< or >) from your details.' });
+  }
 
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('enquiries')

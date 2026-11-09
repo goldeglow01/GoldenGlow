@@ -32,12 +32,27 @@ let onError = () => {};
 const refreshTimers = new Map();
 const reported = new Set();
 
-const uid = (prefix = 'id') => {
-  const random =
-    globalThis.crypto?.randomUUID?.() ||
-    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-  return `${prefix}-${random}`;
+/**
+ * RFC 4122 v4 UUID. Postgres `uuid` columns cannot accept the readable
+ * prefixed ids used for jobs, so records that go into a uuid primary key
+ * (applications, job alerts) always get a bare UUID.
+ */
+const uuid = () => {
+  const crypto = globalThis.crypto;
+  if (crypto?.randomUUID) return crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  if (crypto?.getRandomValues) {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 };
+
+const uid = (prefix = 'id') => `${prefix}-${uuid()}`;
 
 function emit() {
   listeners.forEach((listener) => {
@@ -171,6 +186,9 @@ const applicationToRow = (app) => ({
   city: app.city || '',
   industry: app.industry || '',
   note: app.note || null,
+  cv_path: app.cv?.path ?? null,
+  cv_name: app.cv?.name ?? null,
+  cv_size: app.cv?.size ?? null,
   status: 'submitted',
 });
 
@@ -439,12 +457,52 @@ function applicationErrorMessage(error) {
 async function insertAlert(entry) {
   if (!client) {
     report('Database is not configured.');
-    return;
+    return { error: 'Database is not configured.' };
   }
-  const { error } = await client
-    .from('job_alerts')
-    .insert({ id: entry.id, email: entry.email, filters: entry.filters || {}, source: entry.source || 'jobs-browser' });
-  if (error) report(error.message);
+  const record = {
+    id: entry.id || uuid(),
+    email: entry.email,
+    filters: entry.filters || {},
+    source: entry.source || 'jobs-browser',
+  };
+  const { error } = await client.from('job_alerts').insert(record);
+  if (error) {
+    report(error.message);
+    return { error: error.message };
+  }
+  return { alert: record };
+}
+
+const CV_MAX_BYTES = 5 * 1024 * 1024;
+const CV_ALLOWED_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+
+/** Validate and upload a CV for an application. Returns its storage details. */
+async function storeCv(applicationId, file) {
+  if (!file) return { error: 'empty' };
+  if (file.size > CV_MAX_BYTES) return { error: 'too-large' };
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  const type =
+    file.type ||
+    {
+      pdf: 'application/pdf',
+      doc: 'application/msword',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    }[ext] ||
+    'application/octet-stream';
+  if (!CV_ALLOWED_TYPES.includes(type)) return { error: 'wrong-type' };
+
+  const safeName = file.name.replace(/[^\w.\- ]+/g, '_').slice(-100) || 'cv';
+  const path = `${currentUser.id}/${applicationId}/${safeName}`;
+  const { error } = await client.storage.from('cvs').upload(path, file, {
+    contentType: type,
+    upsert: true,
+  });
+  if (error) return { error: error.message };
+  return { path, name: file.name, size: file.size };
 }
 
 /* ------------------------------------------------------------------ */
@@ -484,18 +542,42 @@ export const db = {
   /**
    * Submit an application and wait for the database to accept it. Unlike the
    * generic `add`, this only reports success once the row exists.
+   *
+   * The CV is uploaded first and written into the same INSERT. A submitted
+   * application's job snapshot and status are immutable for the applicant, so
+   * attaching the file at insert time also works on databases where migration
+   * 0003 has not been applied yet. If the CV is rejected the application still
+   * goes ahead.
    */
-  async applyToJob(application) {
+  async applyToJob(application, file = null) {
     if (!client || !currentUser) return { error: 'Sign in to apply for a job.' };
+    const id = uuid();
+    let cv = null;
+    let cvError = null;
+
+    if (file) {
+      const stored = await storeCv(id, file);
+      if (stored.error) cvError = stored.error;
+      else cv = { name: stored.name, size: stored.size, path: stored.path };
+    }
+
     const entry = {
       ...application,
-      id: uid('app'),
+      id,
       applicantId: currentUser.id,
       status: 'submitted',
+      cv,
       appliedAt: new Date().toISOString(),
     };
     const { error } = await client.from('applications').insert(applicationToRow(entry));
     if (error) {
+      if (cv?.path) {
+        try {
+          await client.storage.from('cvs').remove([cv.path]);
+        } catch {
+          /* best-effort cleanup */
+        }
+      }
       const message = applicationErrorMessage(error);
       report(message);
       return { error: message };
@@ -507,7 +589,29 @@ export const db = {
       ),
     ]);
     await refresh('applications');
-    return { application: entry };
+    return { application: entry, cvError };
+  },
+
+  /**
+   * Save a job-alert signup and report whether the database accepted it.
+   * Visitors can insert alerts but not read them back, so this waits for the
+   * write instead of optimistically claiming success.
+   */
+  async saveAlert(entry) {
+    const record = {
+      id: uuid(),
+      email: entry.email,
+      filters: entry.filters || {},
+      source: entry.source || 'jobs-browser',
+    };
+    const result = await insertAlert(record);
+    if (result.alert && isAdmin()) {
+      setCollection('alerts', [
+        { ...result.alert, createdAt: new Date().toISOString() },
+        ...state.alerts,
+      ]);
+    }
+    return result;
   },
 
   add(collection, item) {
@@ -530,7 +634,7 @@ export const db = {
     }
 
     if (collection === 'alerts') {
-      entry.id = entry.id || uid('alert');
+      entry.id = entry.id || uuid();
       setCollection('alerts', [entry, ...state.alerts]);
       void insertAlert(entry);
       return entry;
@@ -703,39 +807,21 @@ export const db = {
 
   async uploadCv(applicationId, file) {
     if (!client || !currentUser) return { error: 'auth' };
-    if (!file) return { error: 'empty' };
-    const MAX = 5 * 1024 * 1024;
-    if (file.size > MAX) return { error: 'too-large' };
-    const allowed = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    ];
-    const ext = file.name.split('.').pop()?.toLowerCase();
-    const type =
-      file.type ||
-      {
-        pdf: 'application/pdf',
-        doc: 'application/msword',
-        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      }[ext] ||
-      'application/octet-stream';
-    if (!allowed.includes(type)) return { error: 'wrong-type' };
-
-    const safeName = file.name.replace(/[^\w.\- ]+/g, '_').slice(-100) || 'cv';
-    const path = `${currentUser.id}/${applicationId}/${safeName}`;
-    const { error } = await client.storage.from('cvs').upload(path, file, {
-      contentType: type,
-      upsert: true,
-    });
-    if (error) {
-      report(error.message);
-      return { error: error.message };
+    const stored = await storeCv(applicationId, file);
+    if (stored.error) {
+      if (stored.error !== 'empty' && stored.error !== 'too-large' && stored.error !== 'wrong-type') {
+        report(stored.error);
+      }
+      return { error: stored.error };
     }
 
     const { error: rowError } = await client
       .from('applications')
-      .update({ cv_path: path, cv_name: file.name, cv_size: file.size })
+      .update({
+        cv_path: stored.path,
+        cv_name: stored.name,
+        cv_size: stored.size,
+      })
       .eq('id', applicationId);
     if (rowError) {
       report(rowError.message);
@@ -746,12 +832,12 @@ export const db = {
       'applications',
       state.applications.map((row) =>
         row.id === applicationId
-          ? { ...row, cv: { name: file.name, size: file.size, path } }
+          ? { ...row, cv: { name: stored.name, size: stored.size, path: stored.path } }
           : row
       )
     );
     await refresh('applications');
-    return { path };
+    return { path: stored.path };
   },
 
   async getFileUrl(path, expires = 60) {

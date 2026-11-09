@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { formatDate } from '../data/jobs';
@@ -45,6 +45,7 @@ export default function Dashboard() {
   } = useApp();
   const { role: roleParam } = useParams();
   const role = roleParam === 'worker' ? 'worker' : 'employer';
+  const location = useLocation();
   const [params, setParams] = useSearchParams();
   const tabs = role === 'worker' ? workerTabs : employerTabs;
   const activeTab = params.get('tab') || 'overview';
@@ -65,6 +66,8 @@ export default function Dashboard() {
   }
 
   if (!user) {
+    // Return visitors to the tab they asked for (e.g. the "Post a Job" CTA).
+    const next = encodeURIComponent(`${location.pathname}${location.search}`);
     return (
       <div className="dash">
         <div className="container">
@@ -77,10 +80,10 @@ export default function Dashboard() {
               {t('The employer and worker dashboards are only available with a GoldenGlow account.')}
             </p>
             <div className="auth-gate__actions">
-              <Link className="btn btn--primary" to={`/login?role=${role}`}>
+              <Link className="btn btn--primary" to={`/login?role=${role}&next=${next}`}>
                 {t('Sign In')}
               </Link>
-              <Link className="btn btn--ghost" to={`/signup?role=${role}`}>
+              <Link className="btn btn--ghost" to={`/signup?role=${role}&next=${next}`}>
                 {t('Create an account')}
               </Link>
             </div>
@@ -232,6 +235,9 @@ function EmployerPanels({
     e.preventDefault();
     const next = {};
     if (!form.title.trim()) next.title = t('This field is required');
+    else if (form.title.trim().length < 3 || /[<>]/.test(form.title)) {
+      next.title = t('Enter at least 3 characters, without < or >.');
+    }
     if (!form.industry) next.industry = t('Select an option');
     if (!form.city) next.city = t('Select an option');
     if (form.description.trim().length < 20) next.description = t('Please enter at least 20 characters.');

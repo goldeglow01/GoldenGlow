@@ -74,14 +74,13 @@ export default function AuthPage() {
       ? requestedNext
       : null;
 
+  // Admins belong in the admin panel, everyone else in their role dashboard.
+  const landingFor = (account) =>
+    account?.role === 'admin' ? '/admin' : `/dashboard/${account?.role || role}`;
+
   // Never show sign-in/sign-up to someone who is already signed in.
   if (user) {
-    return (
-      <Navigate
-        to={nextUrl || (user.role === 'admin' ? '/admin' : `/dashboard/${user.role}`)}
-        replace
-      />
-    );
+    return <Navigate to={nextUrl || landingFor(user)} replace />;
   }
 
   const set = (key) => (e) => {
@@ -111,7 +110,11 @@ export default function AuthPage() {
           password: form.password,
           name: form.name.trim(),
           role,
+          // Workers type a trade into this field. Send it as `trade` for the
+          // current trigger and keep `company` populated so accounts created
+          // before the profile-trade migration still show it.
           company: form.company.trim(),
+          trade: role === 'worker' ? form.company.trim() : '',
         });
         if (result.error) {
           setFormError(t(errorCopy[result.error] || result.error));
@@ -122,7 +125,7 @@ export default function AuthPage() {
           return;
         }
         showToast(t('Account created. Welcome to GoldenGlow.'));
-        navigate(nextUrl || `/dashboard/${result.user?.role || role}`);
+        navigate(nextUrl || landingFor(result.user));
       } else {
         const result = await signIn({ email: form.email.trim(), password: form.password, role });
         if (result.error) {
@@ -130,7 +133,7 @@ export default function AuthPage() {
           return;
         }
         showToast(t('Welcome back'));
-        navigate(nextUrl || `/dashboard/${result.user?.role || role}`);
+        navigate(nextUrl || landingFor(result.user));
       }
     } catch {
       setFormError(t(errorCopy.network));

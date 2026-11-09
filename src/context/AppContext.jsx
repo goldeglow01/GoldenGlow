@@ -74,13 +74,23 @@ export function AppProvider({ children }) {
         setUser(null);
         return;
       }
-      let profile = await fetchProfile(session.user.id);
-      if (!profile) {
-        // The auth user can outlive a manually deleted profile row.
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        if (!active) return;
+
+      let profile = null;
+      try {
         profile = await fetchProfile(session.user.id);
+        if (!profile) {
+          // The auth user can outlive a manually deleted profile row.
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          if (!active) return;
+          profile = await fetchProfile(session.user.id);
+        }
+      } catch {
+        // Unreachable database/API: keep the session and render from the auth
+        // metadata instead of signing the user out over a network blip.
+        if (active) setUser(mapProfile(null, session.user));
+        return;
       }
+
       if (!profile) {
         await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
         if (!active) return;
@@ -172,25 +182,35 @@ export function AppProvider({ children }) {
     if (!supabase) return { error: 'not-configured' };
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: authErrorMessage(error) };
-    const profile = await fetchProfile(data.user.id);
+    let profile = null;
+    try {
+      profile = await fetchProfile(data.user.id);
+    } catch {
+      /* fall back to auth metadata for this session */
+    }
     const mapped = mapProfile(profile, data.user);
     setUser(mapped);
     return { error: null, user: mapped };
   }, []);
 
-  const signUp = useCallback(async ({ email, password, name, role, company }) => {
+  const signUp = useCallback(async ({ email, password, name, role, company, trade }) => {
     if (!supabase) return { error: 'not-configured' };
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { name, role, company },
+        data: { name, role, company, trade },
         emailRedirectTo: `${window.location.origin}/login`,
       },
     });
     if (error) return { error: authErrorMessage(error) };
     if (!data.session) return { error: null, needsConfirmation: true, email };
-    const profile = await fetchProfile(data.user.id);
+    let profile = null;
+    try {
+      profile = await fetchProfile(data.user.id);
+    } catch {
+      /* fall back to auth metadata for this session */
+    }
     const mapped = mapProfile(profile, data.user);
     setUser(mapped);
     return { error: null, needsConfirmation: false, user: mapped };
@@ -224,14 +244,17 @@ export function AppProvider({ children }) {
   );
 
   const applyToJob = useCallback(
-    async (app) => {
+    async (app, file) => {
       if (!user) return { error: t('Sign in to apply') };
-      return db.applyToJob({
-        ...app,
-        applicantId: user.id,
-        name: app.name || user.name,
-        email: app.email || user.email,
-      });
+      return db.applyToJob(
+        {
+          ...app,
+          applicantId: user.id,
+          name: app.name || user.name,
+          email: app.email || user.email,
+        },
+        file
+      );
     },
     [user, t]
   );

@@ -41,8 +41,6 @@ export default function WhatsAppButton() {
     };
   }, []);
 
-  if (isPlaceholder(site.contact.whatsapp)) return null;
-
   const href = site.contact.whatsappHref || `https://wa.me/${site.contact.whatsapp.replace(/\D/g, '')}`;
 
   const dismiss = () => {
@@ -60,6 +58,8 @@ export default function WhatsAppButton() {
     const timer = setTimeout(() => setPopupOpen(false), 12000);
     return () => clearTimeout(timer);
   }, [popupOpen]);
+
+  if (isPlaceholder(site.contact.whatsapp)) return null;
 
   return (
     <>

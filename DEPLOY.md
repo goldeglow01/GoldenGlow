@@ -11,9 +11,8 @@ billing, your environment variables.
 
 1. Sign in at <https://vercel.com> with the account that should own the site.
 2. Open <https://vercel.com/new> and choose **Import Git Repository**.
-3. Pick the GoldenGlow repository from the list — **Raisevane/GoldenGlow** or
-   **goldeglow01/GoldenGlow**, whichever your account can see (authorise the Vercel GitHub
-   app for that account if asked). Both hold the same code.
+3. Pick the GoldenGlow repository from the list — **goldenglow01/GoldenGlow** — or the copy in
+   the account you have access to (authorise the Vercel GitHub app for that account if asked).
 4. Leave the defaults. `vercel.json` in the repo already declares everything Vercel needs:
    - framework: `vite`
    - build command: `npm run build`
@@ -58,11 +57,13 @@ Supabase powers authentication **and** all site data. Without it, jobs, applicat
 alerts and the admin panel are empty.
 
 1. Create a free project at <https://supabase.com>.
-2. Open **SQL Editor** and run, in order:
-   - `supabase/migrations/0001_init.sql`
-   - `supabase/migrations/0002_seed_demo.sql` (optional demo vacancies)
+2. Open **SQL Editor** and run every file in `supabase/migrations/` in order:
+   - `0001_init.sql`
+   - `0002_seed_demo.sql` (optional demo vacancies)
+   - `0003_application_cv.sql`
+   - `0004_profile_trade.sql`
 
-   Or, with the Supabase CLI: `supabase db push`.
+   Or, with the Supabase CLI: `supabase db push` (applies all of them in order).
 3. **Authentication → Providers → Email**: enable it (turn off “Confirm email” if you want
    instant sign-in without a mail step).
 4. **Authentication → URL Configuration**: Site URL `https://goldenglowqr.com`; redirect URLs

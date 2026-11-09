@@ -8,17 +8,18 @@ import { industries, industryName } from '../data/industries';
 import { db } from '../lib/db';
 
 export function JobDetailModal({ job, onClose, onApply }) {
-  const { t, lang, savedJobs, toggleSaved } = useApp();
+  const { t, lang, savedJobs, toggleSaved, showToast } = useApp();
   if (!job) return null;
   const industry = industries.find((i) => i.slug === job.industry);
   const salary = formatSalary(job.salary, lang);
   const saved = savedJobs.includes(job.id);
+  const isSample = Boolean(job.isSample);
 
   return (
     <Modal open={!!job} onClose={onClose} title={job.title} subtitle={`${job.company} · ${job.city}`}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-        <span className={`badge ${job.verified ? 'badge--verified' : ''}`}>
-          {job.verified ? t('Verified') : t('Sample listing')}
+        <span className={`badge ${!isSample && job.verified ? 'badge--verified' : ''}`}>
+          {isSample ? t('Sample listing') : job.verified ? t('Verified') : t('Pending review')}
         </span>
         <span className="chip">
           <Icon name="briefcase" size={12} /> {job.type}
@@ -62,7 +63,7 @@ export function JobDetailModal({ job, onClose, onApply }) {
         </ul>
       </div>
 
-      {!job.verified && (
+      {isSample && (
         <p className="form-note" style={{ marginTop: 16 }}>
           {t('Sample listings — demonstration content only, not verified vacancies.')}
         </p>
@@ -75,7 +76,14 @@ export function JobDetailModal({ job, onClose, onApply }) {
         <button
           className={`btn btn--ghost ${saved ? 'is-saved' : ''}`}
           type="button"
-          onClick={() => toggleSaved(job.id)}
+          onClick={() => {
+            toggleSaved(job.id);
+            showToast(
+              saved
+                ? `${job.title} ${t('removed from saved jobs')}`
+                : `${job.title} ${t('saved to saved jobs')}`
+            );
+          }}
         >
           <Icon name="bookmark" size={16} /> {saved ? t('Remove') : t('Save')}
         </button>
@@ -168,7 +176,9 @@ export function ApplyModal({ job, onClose }) {
     );
   }
 
-  if (db.list('applications').some((row) => row.jobId === job.id && row.applicantId === user.id)) {
+  // The refresh after a successful submit adds the row to the cache; only
+  // treat that as "already applied" when this dialog was opened fresh.
+  if (!done && db.list('applications').some((row) => row.jobId === job.id && row.applicantId === user.id)) {
     return (
       <Modal
         open
@@ -208,17 +218,20 @@ export function ApplyModal({ job, onClose }) {
 
     setLoading(true);
     timerRef.current = setTimeout(async () => {
-      const result = await applyToJob({
-        jobId: job.id,
-        jobTitle: job.title,
-        company: job.company,
-        city: job.city,
-        industry: job.industry,
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        note: form.note,
-      });
+      const result = await applyToJob(
+        {
+          jobId: job.id,
+          jobTitle: job.title,
+          company: job.company,
+          city: job.city,
+          industry: job.industry,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          note: form.note,
+        },
+        file
+      );
       if (result?.error) {
         if (mounted.current) {
           setLoading(false);
@@ -226,12 +239,8 @@ export function ApplyModal({ job, onClose }) {
         }
         return;
       }
-      const record = result.application;
-      if (file) {
-        const upload = await db.uploadCv(record.id, file);
-        if (upload.error) {
-          showToast(t('Application saved, but the CV could not be uploaded.'), 'error');
-        }
+      if (result?.cvError) {
+        showToast(t('Application saved, but the CV could not be uploaded.'), 'error');
       }
       if (!mounted.current) return;
       setLoading(false);

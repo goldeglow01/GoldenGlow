@@ -1,21 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 
 const SECTIONS = [
   ['home', 'Home'],
   ['about', 'About'],
   ['industries', 'Industries'],
-  ['employers', 'For employers'],
+  ['employers', 'For Employers'],
   ['jobs', 'Jobs'],
-  ['how-it-works', 'How it works'],
+  ['how-it-works', 'How It Works'],
   ['countries', 'Countries'],
   ['why-us', 'Why GoldenGlow'],
-  ['showcase', 'Showcase'],
+  ['showcase', 'Workforce Showcase'],
   ['contact', 'Contact'],
 ];
 
 /** Thin scroll-progress bar plus clickable section dots on the homepage. */
 export default function ScrollUI() {
+  const { t } = useApp();
   const { pathname } = useLocation();
   const [progress, setProgress] = useState(0);
   const [active, setActive] = useState('home');
@@ -70,9 +72,9 @@ export default function ScrollUI() {
               key={id}
               type="button"
               className={active === id ? 'is-active' : ''}
-              aria-label={label}
+              aria-label={t(label)}
               aria-current={active === id ? 'true' : undefined}
-              title={label}
+              title={t(label)}
               onClick={() => jump(id)}
             />
           ))}

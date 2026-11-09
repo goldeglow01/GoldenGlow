@@ -140,8 +140,8 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
 
         <div className="jobs-toolbar__row">
           <div className="field">
-            <span className="field__label">{t('Job Industry')}</span>
-            <select className="select" value={filters.industry} onChange={(e) => setFilter('industry', e.target.value)}>
+            <label className="field__label" htmlFor="filter-industry">{t('Job Industry')}</label>
+            <select id="filter-industry" className="select" value={filters.industry} onChange={(e) => setFilter('industry', e.target.value)}>
               <option value="">{t('All industries')}</option>
               {industries.map((industry) => (
                 <option key={industry.slug} value={industry.slug}>
@@ -152,8 +152,8 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
           </div>
 
           <div className="field">
-            <span className="field__label">{t('City')}</span>
-            <select className="select" value={filters.city} onChange={(e) => setFilter('city', e.target.value)}>
+            <label className="field__label" htmlFor="filter-city">{t('City')}</label>
+            <select id="filter-city" className="select" value={filters.city} onChange={(e) => setFilter('city', e.target.value)}>
               <option value="">{t('All cities')}</option>
               {cities.map((city) => (
                 <option key={city} value={city}>
@@ -164,8 +164,9 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
           </div>
 
           <div className="field">
-            <span className="field__label">{t('Experience level')}</span>
+            <label className="field__label" htmlFor="filter-experience">{t('Experience level')}</label>
             <select
+              id="filter-experience"
               className="select"
               value={filters.experience}
               onChange={(e) => setFilter('experience', e.target.value)}
@@ -180,8 +181,8 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
           </div>
 
           <div className="field">
-            <span className="field__label">{t('Employment type')}</span>
-            <select className="select" value={filters.type} onChange={(e) => setFilter('type', e.target.value)}>
+            <label className="field__label" htmlFor="filter-type">{t('Employment type')}</label>
+            <select id="filter-type" className="select" value={filters.type} onChange={(e) => setFilter('type', e.target.value)}>
               <option value="">{t('All types')}</option>
               {employmentTypes.map((type) => (
                 <option key={type} value={type}>
@@ -192,8 +193,8 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
           </div>
 
           <div className="field">
-            <span className="field__label">{t('Salary range')}</span>
-            <select className="select" value={filters.salary} onChange={(e) => setFilter('salary', e.target.value)}>
+            <label className="field__label" htmlFor="filter-salary">{t('Salary range')}</label>
+            <select id="filter-salary" className="select" value={filters.salary} onChange={(e) => setFilter('salary', e.target.value)}>
               {salaryBands.map((band) => (
                 <option key={band.value} value={band.value}>
                   {t(band.label)}

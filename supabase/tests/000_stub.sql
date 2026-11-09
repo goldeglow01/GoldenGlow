@@ -20,6 +20,11 @@ as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
 
+-- Supabase grants these to the API roles; the smoke test sets role
+-- `authenticated`, so the trigger must be able to call auth.uid().
+grant usage on schema auth to anon, authenticated, service_role;
+grant execute on function auth.uid() to anon, authenticated, service_role;
+
 create schema storage;
 create table storage.buckets (
   id text primary key,

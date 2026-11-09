@@ -11,6 +11,7 @@ export default function JobAlert({ filters }) {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Let the visitor save another alert after they change the filters.
   const filterKey = JSON.stringify(filters);
@@ -18,32 +19,45 @@ export default function JobAlert({ filters }) {
     setSaved(false);
   }, [filterKey]);
 
+  const industry = industries.find((i) => i.slug === filters.industry);
   const summary = [
     filters.q && `“${filters.q}”`,
-    filters.industry && industryName(industries.find((i) => i.slug === filters.industry) || { name: filters.industry }),
+    industry && t(industryName(industry)),
     filters.city,
     filters.experience,
     filters.type,
   ].filter(Boolean);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!emailPattern.test(email)) {
       setError(t('Enter a valid email address'));
       return;
     }
-    db.add('alerts', {
-      email: email.trim(),
-      filters: {
-        q: filters.q,
-        industry: filters.industry,
-        city: filters.city,
-        experience: filters.experience,
-        type: filters.type,
-        salary: filters.salary,
-      },
-      source: 'jobs-browser',
-    });
+    setSaving(true);
+    let result = null;
+    try {
+      result = await db.saveAlert({
+        email: email.trim(),
+        filters: {
+          q: filters.q,
+          industry: filters.industry,
+          city: filters.city,
+          experience: filters.experience,
+          type: filters.type,
+          salary: filters.salary,
+        },
+        source: 'jobs-browser',
+      });
+    } catch {
+      result = { error: true };
+    } finally {
+      setSaving(false);
+    }
+    if (result?.error) {
+      setError(t('Could not save this search. Please try again.'));
+      return;
+    }
     setError('');
     setSaved(true);
     setEmail('');
@@ -87,8 +101,8 @@ export default function JobAlert({ filters }) {
             }}
             autoComplete="email"
           />
-          <button className="btn btn--primary" type="submit">
-            {t('Save this search')}
+          <button className="btn btn--primary" type="submit" disabled={saving}>
+            {saving ? t('Saving…') : t('Save this search')}
           </button>
           {error && <span className="field-error">{error}</span>}
         </form>

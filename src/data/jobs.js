@@ -200,9 +200,12 @@ export const formatSalary = (salary, lang = 'en') => {
     : `SAR ${fmt(salary.min)} – ${fmt(salary.max)} / month`;
 };
 
-export const formatDate = (iso, lang = 'en') =>
-  new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SA' : 'en-GB', {
+export const formatDate = (iso, lang = 'en') => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SA' : 'en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(iso));
+  }).format(date);
+};

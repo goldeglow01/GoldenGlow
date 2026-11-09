@@ -547,6 +547,45 @@ export const ar = {
     'اربط Supabase لتحميل الوظائف. اضبط VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY.',
   'Your account profile is missing. Please contact support.':
     'ملف حسابك غير موجود. يرجى التواصل مع الدعم.',
+  Verified: 'موثّقة',
+  'saved to saved jobs': 'أُضيفت إلى الوظائف المحفوظة',
+  'removed from saved jobs': 'أُزيلت من الوظائف المحفوظة',
+  'Saving…': 'جارٍ الحفظ…',
+  'Could not save this search. Please try again.':
+    'تعذّر حفظ هذا البحث. يرجى المحاولة مرة أخرى.',
+  'Companies we work with': 'شركات نعمل معها',
+  'Filter by role, city, experience and employment type in seconds.':
+    'صفِّ النتائج حسب الوظيفة والمدينة والخبرة ونوع التوظيف في ثوانٍ.',
+  'Three clear steps, whether you are hiring or looking for work. Tap a step to see what happens.':
+    'ثلاث خطوات واضحة، سواء كنت توظّف أو تبحث عن عمل. اضغط على أي خطوة لمعرفة التفاصيل.',
+  'What you get': 'ما تحصل عليه',
+  Back: 'السابق',
+  'Start now': 'ابدأ الآن',
+  'Next step': 'الخطوة التالية',
+  'Email me jobs like this': 'أرسل لي وظائف مشابهة',
+  Watching: 'متابعة',
+  'Watching all vacancies across Saudi Arabia': 'متابعة جميع الوظائف في السعودية',
+  'Save this search': 'احفظ هذا البحث',
+  'Search saved. Our team can send matching vacancies to that address.':
+    'تم حفظ البحث. يمكن لفريقنا إرسال الوظائف المطابقة إلى ذلك العنوان.',
+  'Application received': 'تم استلام الطلب',
+  Cancel: 'إلغاء',
+  'Close search': 'إغلاق البحث',
+  'Enquiries are delivered to our team by email. We reply to the address you provide, and we never share your details with third parties.':
+    'تُرسل الاستفسارات إلى فريقنا بالبريد الإلكتروني. نرد على العنوان الذي تقدمه، ولا نشارك بياناتك مع أي طرف ثالث.',
+  'Follow us': 'تابعنا',
+  'Global workforce map': 'خريطة القوى العاملة العالمية',
+  Industry: 'القطاع',
+  'Main navigation': 'التنقل الرئيسي',
+  'Message sent — our team will reply to your email shortly':
+    'تم إرسال الرسالة — سيرد فريقنا على بريدك الإلكتروني قريبًا',
+  'Please try again, or email us at': 'يرجى المحاولة مرة أخرى، أو راسلنا على',
+  'Search current openings by trade, city, experience and employment type. Sample listings are shown until real vacancies are published.':
+    'ابحث في الوظائف الحالية حسب المهنة والمدينة والخبرة ونوع التوظيف. تُعرض إعلانات تجريبية حتى تُنشر وظائف حقيقية.',
+  'Search jobs, trades or companies': 'ابحث عن وظائف أو مهن أو شركات',
+  'Sign Out': 'تسجيل الخروج',
+  'link coming soon': 'الرابط قريبًا',
+  'Enter at least 3 characters, without < or >.': 'أدخل 3 أحرف على الأقل، بدون < أو >.',
 };
 
 export function translate(value, lang) {

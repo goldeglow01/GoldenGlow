@@ -18,7 +18,7 @@ const socials = [
 
 export default function Header() {
   const { t, lang, setLang, user, signOut } = useApp();
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const navigate = useNavigate();
 
   const [stuck, setStuck] = useState(false);
@@ -36,12 +36,12 @@ export default function Header() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Close transient UI on navigation.
+  // Close transient UI on navigation, including in-page hash jumps.
   useEffect(() => {
     setMobileOpen(false);
     setSearchOpen(false);
     setOpenGroup('');
-  }, [pathname]);
+  }, [pathname, hash]);
 
   useEffect(() => {
     if (!mobileOpen) return undefined;
@@ -100,10 +100,19 @@ export default function Header() {
     setQuery('');
   };
 
+  // Items may point at a section on the homepage (e.g. `/#about`); the hash
+  // lives on `item.hash` so the same item works from any route.
+  const linkTo = (item) => (item.hash ? `${item.to}#${item.hash}` : item.to);
+
   const isActive = (item) => {
-    if (item.to === pathname) return true;
-    if (pathname === '/' && item.to === '/') return true;
-    return false;
+    const [basePath, baseHash] = item.to.split('#');
+    const targetHash = item.hash ? `#${item.hash}` : baseHash ? `#${baseHash}` : '';
+    if (basePath === '/') {
+      if (pathname !== '/') return false;
+      if (targetHash) return hash === targetHash || (item.hash === 'home' && !hash);
+      return !hash;
+    }
+    return pathname === basePath && (!targetHash || hash === targetHash);
   };
 
   const childrenOf = (item) =>
@@ -243,7 +252,7 @@ export default function Header() {
                       <>
                         <Link
                           className={`nav__link ${isActive(item) ? 'is-active' : ''}`}
-                          to={item.to}
+                          to={linkTo(item)}
                           aria-expanded={openGroup === item.label}
                           onFocus={() => setOpenGroup(item.label)}
                         >
@@ -263,7 +272,7 @@ export default function Header() {
                         </ul>
                       </>
                     ) : (
-                      <Link className={`nav__link ${isActive(item) ? 'is-active' : ''}`} to={item.to}>
+                      <Link className={`nav__link ${isActive(item) ? 'is-active' : ''}`} to={linkTo(item)}>
                         {t(item.label)}
                       </Link>
                     )}
@@ -390,7 +399,7 @@ export default function Header() {
                         )}
                       </>
                     ) : (
-                      <Link className="mobile-nav__link" to={item.to}>
+                      <Link className="mobile-nav__link" to={linkTo(item)}>
                         {t(item.label)}
                       </Link>
                     )}

@@ -20,22 +20,44 @@ function ScrollManager() {
   const { pathname, hash } = useLocation();
 
   useEffect(() => {
-    if (hash) {
-      const id = hash.replace('#', '');
-      const attempt = (tries) => {
-        const el = document.getElementById(id);
-        if (el) {
-          // Keep the target clear of the sticky top bar + header stack.
-          const top = el.getBoundingClientRect().top + window.scrollY - 132;
-          window.scrollTo({ top, behavior: 'smooth' });
-        } else if (tries > 0) {
-          setTimeout(() => attempt(tries - 1), 80);
-        }
-      };
-      attempt(6);
-    } else {
+    if (!hash) {
       window.scrollTo({ top: 0, behavior: 'auto' });
+      return undefined;
     }
+
+    const id = hash.replace('#', '');
+    const timers = [];
+    let cancelled = false;
+
+    const attempt = (tries) => {
+      if (cancelled) return;
+      const el = document.getElementById(id);
+      if (!el) {
+        if (tries > 0) timers.push(setTimeout(() => attempt(tries - 1), 80));
+        return;
+      }
+
+      // Keep the target clear of the sticky top bar + header stack.
+      const top = () => el.getBoundingClientRect().top + window.scrollY - 132;
+      window.scrollTo({ top: top(), behavior: 'smooth' });
+
+      // Images and the deferred globe keep shifting the layout while the page
+      // settles, so re-align once more after the first smooth scroll.
+      [300, 800, 1500, 2500].forEach((delay) => {
+        timers.push(
+          setTimeout(() => {
+            if (!cancelled) window.scrollTo({ top: top(), behavior: 'auto' });
+          }, delay)
+        );
+      });
+    };
+
+    attempt(6);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
   }, [pathname, hash]);
 
   return null;

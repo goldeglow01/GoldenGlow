@@ -38,7 +38,10 @@ export async function fetchProfile(userId) {
     .select('id, email, role, name, company, city, trade, phone, bio, experience, industry, about, website')
     .eq('id', userId)
     .maybeSingle();
-  if (error) return null;
+  // A missing row is `null`; a transport/RLS failure is thrown so callers can
+  // tell "no profile yet" apart from "temporarily unreachable" and avoid
+  // signing the user out over a network blip.
+  if (error) throw error;
   return data;
 }
 
@@ -46,6 +49,7 @@ export async function fetchProfile(userId) {
 export function mapProfile(profile, authUser) {
   if (!profile && !authUser) return null;
   const meta = authUser?.user_metadata || {};
+  const role = profile?.role || (meta.role === 'worker' ? 'worker' : 'employer');
   return {
     id: profile?.id || authUser?.id,
     email: profile?.email || authUser?.email || '',
@@ -53,10 +57,15 @@ export function mapProfile(profile, authUser) {
       profile?.name ||
       meta.name ||
       (authUser?.email ? authUser.email.split('@')[0] : ''),
-    role: profile?.role || (meta.role === 'worker' ? 'worker' : 'employer'),
+    role,
     company: profile?.company || meta.company || '',
     city: profile?.city || '',
-    trade: profile?.trade || '',
+    // Accounts created before migration 0004 stored the worker's trade in
+    // `company`, so fall back to it only when the trade column is null (an
+    // explicitly cleared trade must stay empty).
+    trade: profile
+      ? profile.trade ?? (role === 'worker' ? profile.company || '' : '')
+      : meta.trade || (role === 'worker' ? meta.company || '' : ''),
     phone: profile?.phone || '',
     bio: profile?.bio || '',
     experience: profile?.experience || '',

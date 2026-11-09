@@ -36,6 +36,10 @@ export default function JobsPanel({ data }) {
       setError('Add a job title, a company and a description of at least 20 characters.');
       return;
     }
+    if (form.title.trim().length < 3 || /[<>]/.test(`${form.title}${form.company}`)) {
+      setError('Use at least 3 characters in the title, without < or >.');
+      return;
+    }
     const min = Number(form.salaryMin);
     const max = Number(form.salaryMax);
     db.add('jobs', {

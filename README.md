@@ -17,7 +17,7 @@ Supabase provides accounts and all operational data. Create a project, run the m
 `supabase/migrations/`, and set the environment variables listed under
 **Accounts, database & sign-in** below.
 
-**Source:** https://github.com/Raisevane/GoldenGlow
+**Source:** https://github.com/goldenglow01/GoldenGlow
 
 **Live deployment:** https://goldenglowqr.com (Vercel, production)
 
@@ -35,9 +35,12 @@ custom domain) is covered step by step in [DEPLOY.md](DEPLOY.md).
 Supabase provides **both** authentication and the Postgres database. Create a free project at
 [supabase.com](https://supabase.com), then:
 
-1. Run `supabase/migrations/0001_init.sql` and `0002_seed_demo.sql` in the SQL editor (or
-   `supabase db push`). This creates all tables, RLS policies, triggers, the private `cvs` bucket
-   and the realtime publication.
+1. Run every file in `supabase/migrations/` in order — `0001_init.sql`, `0002_seed_demo.sql`
+   (optional demo vacancies), `0003_application_cv.sql` and `0004_profile_trade.sql` — in the SQL
+   editor, or run `supabase db push` once. This creates all tables, RLS policies, triggers, the
+   private `cvs` bucket and the realtime publication. `0003` lets applicants attach a CV and keeps
+   the application snapshot immutable; `0004` stores a worker's trade from sign-up. An existing
+   project needs these two applied before the matching front-end changes go live.
 2. Copy the project URL, anon key and service-role key into the environment:
 
 ```bash
@@ -107,7 +110,10 @@ contactEndpoint: '',                                          // see “Connecti
 Other content files:
 
 - `src/data/industries.js` — the 20 industry categories (name, Arabic name, icon, tone, description)
-- `src/data/jobs.js` — **10 sample vacancies**. These are clearly labelled “Sample listing” in the UI. Replace with real postings; set `salary: null` to hide the salary line.
+- `src/data/jobs.js` — a reference copy of the ten demo vacancies (also seeded by
+  `0002_seed_demo.sql`) plus the salary/date formatters. The homepage hero builds its Job Title
+  suggestions from this file; the live vacancies themselves come from Supabase and are labelled
+  “Sample listing” while `is_sample` is true.
 - `src/data/content.js` — hero slides, client logos, stats, employer services, countries, process steps, why-cards, gallery, team profiles, globe phrases.
 - `scripts/hero-crops.mjs` — rebuilds the wide hero photos in `public/images/hero/` (dark blurred
   backdrop plus the sharp worker on the right) from the portrait sources. Run

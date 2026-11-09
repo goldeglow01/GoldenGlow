@@ -8,6 +8,7 @@ export default function JobCard({ job, onView, onApply }) {
   const saved = savedJobs.includes(job.id);
   const industry = industries.find((i) => i.slug === job.industry);
   const salary = formatSalary(job.salary, lang);
+  const isSample = Boolean(job.isSample);
 
   return (
     <article className="job-card">
@@ -16,13 +17,15 @@ export default function JobCard({ job, onView, onApply }) {
           <h3>{job.title}</h3>
           <p className="job-card__company">{job.company}</p>
         </div>
-        <span className={`badge ${job.verified ? 'badge--verified' : ''}`}>
-          {job.verified ? (
+        <span className={`badge ${!isSample && job.verified ? 'badge--verified' : ''}`}>
+          {isSample ? (
+            t('Sample listing')
+          ) : job.verified ? (
             <>
               <Icon name="shield-check" size={12} /> {t('Verified')}
             </>
           ) : (
-            t('Sample listing')
+            t('Pending review')
           )}
         </span>
       </div>
@@ -61,7 +64,11 @@ export default function JobCard({ job, onView, onApply }) {
             aria-pressed={saved}
             onClick={() => {
               toggleSaved(job.id);
-              showToast(saved ? `${job.title} ${t('Remove').toLowerCase()}` : `${job.title} ${t('Saved jobs').toLowerCase()}`);
+              showToast(
+                saved
+                  ? `${job.title} ${t('removed from saved jobs')}`
+                  : `${job.title} ${t('saved to saved jobs')}`
+              );
             }}
           >
             <Icon name="bookmark" size={16} />

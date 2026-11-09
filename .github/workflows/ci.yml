@@ -53,8 +53,10 @@ jobs:
 
       - name: Apply migrations
         run: |
-          $PSQL -f supabase/migrations/0001_init.sql
-          $PSQL -f supabase/migrations/0002_seed_demo.sql
+          for file in supabase/migrations/*.sql; do
+            echo "Applying $file"
+            $PSQL -f "$file"
+          done
 
       - name: Smoke-test triggers and RLS
         run: $PSQL -f supabase/tests/001_smoke.sql
