@@ -10,3 +10,6 @@ tmp
 .env*
 # Keep the documented template, ignore only real environment files.
 !.env.example
+
+# Supabase CLI temp files
+supabase/.temp
