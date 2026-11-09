@@ -88,7 +88,7 @@ const empty = { name: '', email: '', phone: '', note: '' };
 const emailPattern = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 export function ApplyModal({ job, onClose }) {
-  const { t, user, addApplication, showToast } = useApp();
+  const { t, user, applyToJob, showToast } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState(empty);
@@ -208,7 +208,7 @@ export function ApplyModal({ job, onClose }) {
 
     setLoading(true);
     timerRef.current = setTimeout(async () => {
-      const record = addApplication({
+      const result = await applyToJob({
         jobId: job.id,
         jobTitle: job.title,
         company: job.company,
@@ -219,13 +219,14 @@ export function ApplyModal({ job, onClose }) {
         phone: form.phone,
         note: form.note,
       });
-      if (!record) {
+      if (result?.error) {
         if (mounted.current) {
           setLoading(false);
-          showToast(t('Sign in to apply'), 'error');
+          showToast(result.error, 'error');
         }
         return;
       }
+      const record = result.application;
       if (file) {
         const upload = await db.uploadCv(record.id, file);
         if (upload.error) {

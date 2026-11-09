@@ -545,6 +545,8 @@ export const ar = {
   'Enquiry saved to the GoldenGlow inbox': 'تم حفظ الاستفسار في صندوق جولدن جلو',
   'Connect Supabase to load vacancies. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.':
     'اربط Supabase لتحميل الوظائف. اضبط VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY.',
+  'Your account profile is missing. Please contact support.':
+    'ملف حسابك غير موجود. يرجى التواصل مع الدعم.',
 };
 
 export function translate(value, lang) {

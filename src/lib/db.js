@@ -421,23 +421,19 @@ async function insertJob(entry) {
   await refresh('jobs');
 }
 
-async function insertApplication(entry) {
-  if (!client || !currentUser) {
-    report('Sign in to apply for a job.');
-    await revert('applications');
-    return;
+function applicationErrorMessage(error) {
+  const message = String(error?.message || '');
+  const lower = message.toLowerCase();
+  if (message.includes('job_not_open')) return 'This vacancy is no longer open.';
+  if (message.includes('job_not_found')) return 'This vacancy could not be found.';
+  if (lower.includes('duplicate key')) return 'You have already applied to this job.';
+  if (lower.includes('applications_applicant_id_fkey') || lower.includes('foreign key')) {
+    return 'Your account profile is missing. Please sign out and sign in again.';
   }
-  const { error } = await client.from('applications').insert(applicationToRow(entry));
-  if (error) {
-    if (/job_not_open|job_not_found/.test(error.message)) {
-      report('This vacancy is no longer open.');
-    } else {
-      report(error.message);
-    }
-    await revert('applications');
-    return;
+  if (lower.includes('row-level security') || lower.includes('permission denied')) {
+    return 'Your session has expired. Please sign in again.';
   }
-  await refresh('applications');
+  return message || 'The application could not be sent.';
 }
 
 async function insertAlert(entry) {
@@ -485,6 +481,35 @@ export const db = {
     onError = typeof handler === 'function' ? handler : () => {};
   },
 
+  /**
+   * Submit an application and wait for the database to accept it. Unlike the
+   * generic `add`, this only reports success once the row exists.
+   */
+  async applyToJob(application) {
+    if (!client || !currentUser) return { error: 'Sign in to apply for a job.' };
+    const entry = {
+      ...application,
+      id: uid('app'),
+      applicantId: currentUser.id,
+      status: 'submitted',
+      appliedAt: new Date().toISOString(),
+    };
+    const { error } = await client.from('applications').insert(applicationToRow(entry));
+    if (error) {
+      const message = applicationErrorMessage(error);
+      report(message);
+      return { error: message };
+    }
+    setCollection('applications', [
+      entry,
+      ...state.applications.filter(
+        (row) => !(row.jobId === entry.jobId && row.applicantId === currentUser.id)
+      ),
+    ]);
+    await refresh('applications');
+    return { application: entry };
+  },
+
   add(collection, item) {
     if (!COLLECTIONS.includes(collection)) {
       throw new Error(`Unknown collection: ${collection}`);
@@ -500,22 +525,8 @@ export const db = {
     }
 
     if (collection === 'applications') {
-      if (!currentUser) {
-        report('Sign in to apply for a job.');
-        return null;
-      }
-      entry.id = entry.id || uid('app');
-      entry.applicantId = currentUser.id;
-      entry.status = 'submitted';
-      entry.appliedAt = entry.appliedAt || entry.createdAt;
-      setCollection('applications', [
-        entry,
-        ...state.applications.filter(
-          (row) => !(row.jobId === entry.jobId && row.applicantId === currentUser.id)
-        ),
-      ]);
-      void insertApplication(entry);
-      return entry;
+      report('Applications must be submitted with applyToJob.');
+      return null;
     }
 
     if (collection === 'alerts') {

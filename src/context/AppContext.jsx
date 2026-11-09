@@ -74,7 +74,20 @@ export function AppProvider({ children }) {
         setUser(null);
         return;
       }
-      const profile = await fetchProfile(session.user.id);
+      let profile = await fetchProfile(session.user.id);
+      if (!profile) {
+        // The auth user can outlive a manually deleted profile row.
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        if (!active) return;
+        profile = await fetchProfile(session.user.id);
+      }
+      if (!profile) {
+        await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        if (!active) return;
+        setUser(null);
+        showToast(t('Your account profile is missing. Please contact support.'), 'error');
+        return;
+      }
       if (!active) return;
       setUser(mapProfile(profile, session.user));
     };
@@ -185,7 +198,13 @@ export function AppProvider({ children }) {
 
   const signOut = useCallback(async () => {
     setUser(null);
-    if (supabase) await supabase.auth.signOut();
+    if (!supabase) return;
+    try {
+      // Local scope avoids a 403 when the server session has already expired.
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      /* already signed out */
+    }
   }, []);
 
   const toggleSaved = useCallback(
@@ -204,17 +223,17 @@ export function AppProvider({ children }) {
     [user, showToast, t]
   );
 
-  const addApplication = useCallback(
-    (app) => {
-      if (!user) return null;
-      return db.add('applications', {
+  const applyToJob = useCallback(
+    async (app) => {
+      if (!user) return { error: t('Sign in to apply') };
+      return db.applyToJob({
         ...app,
         applicantId: user.id,
         name: app.name || user.name,
         email: app.email || user.email,
       });
     },
-    [user]
+    [user, t]
   );
 
   const updateProfile = useCallback(async (changes) => {
@@ -238,7 +257,7 @@ export function AppProvider({ children }) {
       savedJobs,
       toggleSaved,
       applications,
-      addApplication,
+      applyToJob,
       updateProfile,
       toast,
       showToast,
@@ -254,7 +273,7 @@ export function AppProvider({ children }) {
       savedJobs,
       toggleSaved,
       applications,
-      addApplication,
+      applyToJob,
       updateProfile,
       toast,
       showToast,
