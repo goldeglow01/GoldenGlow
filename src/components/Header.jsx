@@ -194,9 +194,12 @@ export default function Header() {
 
               {user ? (
                 <>
-                  <Link className="topbar__link" to={`/dashboard/${user.role || 'worker'}`}>
+                  <Link
+                    className="topbar__link"
+                    to={user.role === 'admin' ? '/admin' : `/dashboard/${user.role || 'worker'}`}
+                  >
                     <Icon name="briefcase" size={14} />
-                    {t('Dashboard')}
+                    {t(user.role === 'admin' ? 'Admin' : 'Dashboard')}
                   </Link>
                   <span className="topbar__divider" aria-hidden="true" />
                   <button type="button" className="topbar__link" onClick={signOut}>
@@ -402,8 +405,11 @@ export default function Header() {
                 {t('Post a Job')}
               </Link>
               {user ? (
-                <Link className="btn btn--ghost btn--block" to={`/dashboard/${user.role || 'worker'}`}>
-                  {t('Dashboard')}
+                <Link
+                  className="btn btn--ghost btn--block"
+                  to={user.role === 'admin' ? '/admin' : `/dashboard/${user.role || 'worker'}`}
+                >
+                  {t(user.role === 'admin' ? 'Admin' : 'Dashboard')}
                 </Link>
               ) : (
                 <>

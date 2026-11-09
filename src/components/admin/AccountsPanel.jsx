@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import Icon from '../Icon';
-import { db } from '../../lib/db';
 import { fmtDate, matches, downloadCsv } from './helpers';
+
+const roleLabel = { worker: 'Worker', employer: 'Employer', admin: 'Admin' };
+const roleTone = { worker: 'info', employer: 'ok', admin: 'bad' };
 
 export default function AccountsPanel({ data }) {
   const [query, setQuery] = useState('');
   const rows = (data.accounts || []).filter((row) =>
-    matches(row, query, ['name', 'email', 'role', 'company'])
+    matches(row, query, ['name', 'email', 'role', 'company', 'city'])
   );
 
   return (
     <div className="admin-card">
       <h2>Accounts</h2>
       <p className="admin-card__sub">
-        Everyone who signed up or signed in, with their account type and what they entered.
+        Everyone with a GoldenGlow account, with their account type and company or trade.
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -32,9 +34,9 @@ export default function AccountsPanel({ data }) {
             downloadCsv('goldenglow-accounts.csv', rows, [
               { label: 'Name', key: 'name' },
               { label: 'Email', key: 'email' },
-              { label: 'Role', key: 'role' },
+              { label: 'Role', value: (row) => roleLabel[row.role] || row.role },
               { label: 'Company / trade', key: 'company' },
-              { label: 'Event', key: 'event' },
+              { label: 'City', key: 'city' },
               { label: 'Created', value: (row) => fmtDate(row.createdAt) },
             ])
           }
@@ -45,7 +47,7 @@ export default function AccountsPanel({ data }) {
       </div>
 
       {rows.length === 0 ? (
-        <div className="admin-empty">No accounts yet. Sign-ups and sign-ins from the site land here.</div>
+        <div className="admin-empty">No accounts yet. Sign-ups from the site land here.</div>
       ) : (
         <div className="admin-table-wrap">
           <table className="admin-table">
@@ -54,8 +56,8 @@ export default function AccountsPanel({ data }) {
                 <th>Person</th>
                 <th>Type</th>
                 <th>Company / trade</th>
-                <th>Event</th>
-                <th>When</th>
+                <th>City</th>
+                <th>Joined</th>
                 <th />
               </tr>
             </thead>
@@ -63,20 +65,16 @@ export default function AccountsPanel({ data }) {
               {rows.map((row) => (
                 <tr key={row.id}>
                   <td>
-                    <strong>
-                      {row.name || '—'} {row.sample && <span className="pill pill--muted">Sample</span>}
-                    </strong>
+                    <strong>{row.name || '—'}</strong>
                     <small>{row.email}</small>
                   </td>
                   <td>
-                    <span className={`pill pill--${row.role === 'worker' ? 'info' : 'ok'}`}>{row.role}</span>
+                    <span className={`pill pill--${roleTone[row.role] || 'muted'}`}>
+                      {roleLabel[row.role] || row.role}
+                    </span>
                   </td>
                   <td>{row.company || <small>—</small>}</td>
-                  <td>
-                    {row.event === 'signin' ? 'Sign in' : 'Sign up'}
-                    <br />
-                    <small>{row.mode === 'live' ? 'Supabase' : 'Local'}</small>
-                  </td>
+                  <td>{row.city || <small>—</small>}</td>
                   <td>
                     <small>{fmtDate(row.createdAt)}</small>
                   </td>
@@ -85,14 +83,6 @@ export default function AccountsPanel({ data }) {
                       <a className="btn btn--ghost btn--sm" href={`mailto:${row.email}`}>
                         <Icon name="mail" size={13} />
                       </a>
-                      <button
-                        type="button"
-                        className="btn btn--ghost btn--sm"
-                        aria-label={`Delete ${row.email}`}
-                        onClick={() => db.remove('accounts', row.id)}
-                      >
-                        <Icon name="trash" size={13} />
-                      </button>
                     </div>
                   </td>
                 </tr>

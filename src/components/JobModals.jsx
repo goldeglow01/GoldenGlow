@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Modal from './Modal';
 import Icon from './Icon';
 import { useApp } from '../context/AppContext';
@@ -89,6 +89,8 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 export function ApplyModal({ job, onClose }) {
   const { t, user, addApplication, showToast } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState({});
   const [done, setDone] = useState(false);
@@ -130,6 +132,65 @@ export function ApplyModal({ job, onClose }) {
 
   if (!job) return null;
 
+  const nextUrl = `${location.pathname}${location.search}`;
+  const goSignIn = () => {
+    onClose();
+    navigate(`/login?next=${encodeURIComponent(nextUrl)}`);
+  };
+
+  if (!user) {
+    return (
+      <Modal
+        open
+        onClose={onClose}
+        title={t('Sign in to apply')}
+        subtitle={`${job.title} · ${job.company}`}
+        narrow
+      >
+        <p style={{ marginBottom: 16, color: 'var(--muted)', lineHeight: 1.7 }}>
+          {t(
+            'Create a free worker account to apply, upload your CV and track every application in your dashboard.'
+          )}
+        </p>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn--primary" onClick={goSignIn}>
+            {t('Sign In')}
+          </button>
+          <Link
+            className="btn btn--ghost"
+            to={`/signup?role=worker&next=${encodeURIComponent(nextUrl)}`}
+            onClick={onClose}
+          >
+            {t('Create an account')}
+          </Link>
+        </div>
+      </Modal>
+    );
+  }
+
+  if (db.list('applications').some((row) => row.jobId === job.id && row.applicantId === user.id)) {
+    return (
+      <Modal
+        open
+        onClose={onClose}
+        title={t('Already applied')}
+        subtitle={`${job.title} · ${job.company}`}
+        narrow
+      >
+        <p style={{ marginBottom: 16, color: 'var(--muted)', lineHeight: 1.7 }}>
+          {t('You have already applied to this job. You can track its status in your dashboard.')}
+        </p>
+        <Link
+          className="btn btn--primary"
+          to="/dashboard/worker?tab=applications"
+          onClick={onClose}
+        >
+          {t('Application status')}
+        </Link>
+      </Modal>
+    );
+  }
+
   const set = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -157,9 +218,20 @@ export function ApplyModal({ job, onClose }) {
         email: form.email,
         phone: form.phone,
         note: form.note,
-        cv: file ? { name: file.name, size: file.size } : null,
       });
-      if (file && record) await db.saveFile(record.id, file);
+      if (!record) {
+        if (mounted.current) {
+          setLoading(false);
+          showToast(t('Sign in to apply'), 'error');
+        }
+        return;
+      }
+      if (file) {
+        const upload = await db.uploadCv(record.id, file);
+        if (upload.error) {
+          showToast(t('Application saved, but the CV could not be uploaded.'), 'error');
+        }
+      }
       if (!mounted.current) return;
       setLoading(false);
       setDone(true);
@@ -181,7 +253,7 @@ export function ApplyModal({ job, onClose }) {
             <strong>{t('Application received')}</strong>
             <br />
             {t(
-              'Your details are saved to the site records and appear in the GoldenGlow admin panel. Connect a hosted database to share them across devices.'
+              'Your application has been saved and appears in the GoldenGlow admin panel. Track its status from your worker dashboard.'
             )}
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
@@ -238,7 +310,15 @@ export function ApplyModal({ job, onClose }) {
                 className="input"
                 type="file"
                 accept=".pdf,.doc,.docx"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                onChange={(e) => {
+                  const next = e.target.files?.[0] || null;
+                  if (next && next.size > 5 * 1024 * 1024) {
+                    showToast(t('CV must be under 5 MB'), 'error');
+                    e.target.value = '';
+                    return;
+                  }
+                  setFile(next);
+                }}
               />
               {file && (
                 <span className="form-note" style={{ marginTop: 4 }}>
@@ -260,7 +340,7 @@ export function ApplyModal({ job, onClose }) {
 
           <p className="form-note" style={{ marginTop: 0, marginBottom: 14 }}>
             {t(
-              'Your application is stored privately for this site. CV files are kept in this browser only until document storage is connected.'
+              'Your application is stored securely for this site. CV files go to private storage and are only accessible to you and GoldenGlow staff.'
             )}
           </p>
 

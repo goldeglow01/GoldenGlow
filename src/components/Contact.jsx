@@ -4,7 +4,6 @@ import Reveal from './Reveal';
 import { useApp } from '../context/AppContext';
 import { site, cities, isPlaceholder } from '../data/site';
 import { industries, industryName } from '../data/industries';
-import { db } from '../lib/db';
 
 const empty = {
   name: '',
@@ -60,17 +59,13 @@ export default function Contact() {
 
     setState('loading');
     setStatus(null);
-    const payload = { ...form, submittedAt: new Date().toISOString() };
 
     if (!site.contactEndpoint) {
-      db.add('messages', { ...form, status: 'New', delivered: false });
       setState('idle');
       setStatus({
-        tone: 'info',
-        text: t('Enquiry saved to the GoldenGlow inbox'),
+        tone: 'error',
+        text: `${t('Message could not be sent')}. ${t('Please email us directly at')} ${site.contact.email}.`,
       });
-      setForm(empty);
-      showToast(t('Enquiry saved to the GoldenGlow inbox'));
       return;
     }
 
@@ -78,7 +73,7 @@ export default function Contact() {
       const response = await fetch(site.contactEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(form),
       });
 
       let result = {};
@@ -89,39 +84,45 @@ export default function Contact() {
       }
 
       if (!response.ok) {
-        const notConfigured =
-          result.code === 'NOT_CONFIGURED' || response.status === 503 || response.status === 404;
-        db.add('messages', {
-          ...form,
-          status: 'New',
-          delivered: false,
-          reason: result.code || `HTTP ${response.status}`,
-        });
-
+        const rateLimited = response.status === 429 || result.code === 'RATE_LIMITED';
         setStatus({
           tone: 'error',
-          text: notConfigured
-            ? `${t('Enquiry saved in the site inbox, but email delivery is not switched on yet')}. ${t(
-                'Please email us directly at'
-              )} ${site.contact.email}.`
+          text: rateLimited
+            ? t('Too many attempts. Wait a minute and try again.')
             : `${t('Message could not be sent')}. ${t('Please try again, or email us at')} ${site.contact.email}.`,
         });
         setState('idle');
         return;
       }
 
-      db.add('messages', { ...form, status: 'New', delivered: true });
-      setStatus({
-        tone: 'success',
-        text: t('Message sent — our team will reply to your email shortly'),
-      });
+      const emailSent = Boolean(result.emailSent ?? result.email_sent);
+      if (emailSent) {
+        setStatus({
+          tone: 'success',
+          text: t('Message sent — our team will reply to your email shortly'),
+        });
+        showToast(t('Message sent'));
+      } else if (result.emailFailed) {
+        setStatus({
+          tone: 'error',
+          text: `${t('Enquiry saved, but the email could not be delivered')}. ${t(
+            'Please email us directly at'
+          )} ${site.contact.email}.`,
+        });
+      } else {
+        setStatus({
+          tone: 'info',
+          text: `${t('Enquiry saved in the site inbox, but email delivery is not switched on yet')}. ${t(
+            'Please email us directly at'
+          )} ${site.contact.email}.`,
+        });
+        showToast(t('Enquiry saved to the GoldenGlow inbox'));
+      }
       setForm(empty);
-      showToast(t('Message sent'));
     } catch {
-      db.add('messages', { ...form, status: 'New', delivered: false, reason: 'network' });
       setStatus({
         tone: 'error',
-        text: `${t('Message could not be sent')}. ${t('Please try again, or email us at')} ${site.contact.email}.`,
+        text: `${t('Message could not be sent')}. ${t('Please retry, or email us at')} ${site.contact.email}.`,
       });
     } finally {
       setState('idle');

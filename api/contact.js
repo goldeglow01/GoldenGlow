@@ -1,21 +1,23 @@
+import { createHash } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
 /**
- * Contact-form delivery for the GoldenGlow website.
+ * Contact-form delivery.
  *
- * Every enquiry submitted on the site is emailed to the GoldenGlow Private
- * Email inbox (info@goldenglowqr.com) over authenticated SMTP, so replies go
- * straight back to the sender via the Reply-To header.
+ * Every enquiry is written to Supabase (`public.enquiries`) with the service
+ * role, then emailed over authenticated SMTP. If SMTP is not configured the
+ * enquiry is still stored and the API reports `emailSent: false`; the site
+ * tells the visitor to email directly. If the database is not configured the
+ * endpoint answers 503.
  *
  * Environment variables (Vercel → Settings → Environment Variables):
- *   SMTP_PASS  — mailbox password for info@goldenglowqr.com   (required)
- *   SMTP_USER  — mailbox address                       (default info@goldenglowqr.com)
- *   SMTP_HOST  — mail server                  (default mail.privateemail.com)
- *   SMTP_PORT  — 465 (implicit TLS) or 587 (STARTTLS)          (default 465)
- *   MAIL_TO    — where enquiries are delivered        (default info@goldenglowqr.com)
- *
- * Without SMTP_PASS the endpoint answers 503 with code NOT_CONFIGURED; the site
- * then keeps the enquiry in its own inbox and tells the visitor honestly.
+ *   SUPABASE_URL                 project URL (falls back to VITE_SUPABASE_URL)
+ *   SUPABASE_SERVICE_ROLE_KEY    server-only key — never expose as VITE_*
+ *   SMTP_PASS                    mailbox password for info@goldenglowqr.com (optional for storage)
+ *   SMTP_USER / SMTP_HOST / SMTP_PORT / MAIL_TO   (defaults below)
+ *   SITE_URL                      canonical site origin for the origin check
+ *   IP_HASH_SALT                  optional salt for IP rate-limit hashes
  */
 
 const clean = (value, max = 4000) =>
@@ -36,8 +38,15 @@ const SITE_ORIGIN = (
   'https://goldenglowqr.com'
 ).replace(/\/$/, '');
 
-// Best-effort per-instance throttle. Serverless instances are short-lived, so
-// this raises the cost of abuse but is not a substitute for an edge rate limit.
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseAdmin =
+  SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+
+// Best-effort per-instance throttle. The database trigger is the durable guard.
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_WINDOW = 5;
 const hits = new Map();
@@ -75,6 +84,12 @@ function isSameOrigin(req) {
   return origin === SITE_ORIGIN || (!!own && origin === own);
 }
 
+function ipHash(req) {
+  return createHash('sha256')
+    .update(`${clientIp(req)}:${process.env.IP_HASH_SALT || 'goldenglow'}`)
+    .digest('hex');
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -100,9 +115,9 @@ export default async function handler(req, res) {
     });
   }
 
-  if (!process.env.SMTP_PASS) {
+  if (!supabaseAdmin) {
     return res.status(503).json({
-      error: 'Email delivery is not configured yet.',
+      error: 'The enquiries database is not configured yet.',
       code: 'NOT_CONFIGURED',
     });
   }
@@ -116,7 +131,7 @@ export default async function handler(req, res) {
 
   // Honeypot: real visitors never fill this hidden field.
   if (clean(body.website)) {
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({ ok: true, emailSent: false });
   }
 
   const name = clean(body.name, 120);
@@ -126,14 +141,57 @@ export default async function handler(req, res) {
   const city = clean(body.city, 80);
   const inquiry = clean(body.inquiry, 120);
   const industry = clean(body.industry, 120);
-  const workers = clean(body.workers, 20);
+  const workersText = clean(body.workers, 20);
   const message = clean(body.message, 5000);
+  const workers = /^\d+$/.test(workersText) ? Number(workersText) : null;
 
   if (!name || !email || !message) {
     return res.status(400).json({ error: 'Name, email and message are required.' });
   }
   if (!emailPattern.test(email)) {
     return res.status(400).json({ error: 'Please provide a valid email address.' });
+  }
+
+  const { data: inserted, error: insertError } = await supabaseAdmin
+    .from('enquiries')
+    .insert({
+      name,
+      email,
+      phone,
+      company,
+      city,
+      inquiry: inquiry || 'General Inquiry',
+      industry,
+      workers,
+      message,
+      status: 'new',
+      email_sent: false,
+      ip_hash: ipHash(req),
+    })
+    .select('id')
+    .single();
+
+  if (insertError) {
+    if (/rate_limited/.test(insertError.message)) {
+      res.setHeader('Retry-After', '3600');
+      return res.status(429).json({
+        error: 'Too many enquiries from this connection. Please try again later.',
+        code: 'RATE_LIMITED',
+      });
+    }
+    console.error('[contact] insert failed:', insertError.message);
+    return res.status(502).json({
+      error: 'The enquiry could not be saved right now.',
+      code: 'DB_ERROR',
+    });
+  }
+
+  if (!process.env.SMTP_PASS) {
+    await supabaseAdmin
+      .from('enquiries')
+      .update({ email_error: 'SMTP is not configured' })
+      .eq('id', inserted.id);
+    return res.status(200).json({ ok: true, emailSent: false });
   }
 
   const user = process.env.SMTP_USER || 'info@goldenglowqr.com';
@@ -149,7 +207,7 @@ export default async function handler(req, res) {
     ['City', city],
     ['Enquiry type', inquiry],
     ['Industry', industry],
-    ['Workers needed', workers],
+    ['Workers needed', workersText],
   ].filter(([, value]) => value);
 
   const text = [
@@ -197,8 +255,6 @@ export default async function handler(req, res) {
     });
 
     await transporter.sendMail({
-      // Object form prevents a crafted display name from injecting extra
-      // recipients into the address header.
       from: { name: 'GoldenGlow Website', address: user },
       to,
       replyTo: { name, address: email },
@@ -207,12 +263,14 @@ export default async function handler(req, res) {
       html,
     });
 
-    return res.status(200).json({ ok: true });
+    await supabaseAdmin.from('enquiries').update({ email_sent: true, email_error: null }).eq('id', inserted.id);
+    return res.status(200).json({ ok: true, emailSent: true });
   } catch (error) {
     console.error('[contact] send failed:', error?.message || error);
-    return res.status(502).json({
-      error: 'The message could not be delivered right now.',
-      code: 'SEND_FAILED',
-    });
+    await supabaseAdmin
+      .from('enquiries')
+      .update({ email_error: String(error?.message || error).slice(0, 500) })
+      .eq('id', inserted.id);
+    return res.status(200).json({ ok: true, emailSent: false, emailFailed: true });
   }
 }

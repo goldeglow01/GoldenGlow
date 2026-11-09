@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
-import { jobs as sampleJobs, formatDate } from '../data/jobs';
+import { formatDate } from '../data/jobs';
 import { industries, industryName } from '../data/industries';
 import { cities, employmentTypes, experienceLevels } from '../data/site';
 import { db } from '../lib/db';
@@ -12,7 +12,6 @@ const employerTabs = [
   { id: 'post', label: 'Post a job', icon: 'plus' },
   { id: 'jobs', label: 'My Jobs', icon: 'briefcase' },
   { id: 'applications', label: 'Applications', icon: 'file' },
-  { id: 'candidates', label: 'Candidates', icon: 'users' },
 ];
 
 const workerTabs = [
@@ -33,7 +32,17 @@ const blankJob = {
 };
 
 export default function Dashboard() {
-  const { t, lang, user, authReady, applications, savedJobs, toggleSaved, updateApplicationStatus, showToast } = useApp();
+  const {
+    t,
+    lang,
+    user,
+    authReady,
+    applications,
+    savedJobs,
+    toggleSaved,
+    updateProfile,
+    showToast,
+  } = useApp();
   const { role: roleParam } = useParams();
   const role = roleParam === 'worker' ? 'worker' : 'employer';
   const [params, setParams] = useSearchParams();
@@ -79,6 +88,11 @@ export default function Dashboard() {
         </div>
       </div>
     );
+  }
+
+  // Workers and employers only see their own dashboard. Admins may view both.
+  if (user.role !== 'admin' && roleParam !== user.role) {
+    return <Navigate to={`/dashboard/${user.role}`} replace />;
   }
 
   return (
@@ -129,7 +143,7 @@ export default function Dashboard() {
             tab={activeTab}
             setTab={setTab}
             applications={applications}
-            updateApplicationStatus={updateApplicationStatus}
+            updateProfile={updateProfile}
             showToast={showToast}
             t={t}
             lang={lang}
@@ -142,6 +156,7 @@ export default function Dashboard() {
             applications={applications}
             savedJobs={savedJobs}
             toggleSaved={toggleSaved}
+            updateProfile={updateProfile}
             showToast={showToast}
             t={t}
             lang={lang}
@@ -154,31 +169,59 @@ export default function Dashboard() {
   );
 }
 
+const STATUS_LABELS = {
+  submitted: 'Submitted',
+  under_review: 'Under review',
+  shortlisted: 'Shortlist',
+  contacted: 'Contacted',
+  hired: 'Hired',
+  declined: 'Declined',
+};
+
 function StatusPill({ status }) {
-  const tone = status === 'Shortlist' ? 'status-pill--green' : status === 'Under review' ? 'status-pill--gold' : '';
-  return <span className={`status-pill ${tone}`}>{status}</span>;
+  const tone =
+    status === 'shortlisted' || status === 'hired'
+      ? 'status-pill--green'
+      : status === 'under_review' || status === 'contacted'
+        ? 'status-pill--gold'
+        : '';
+  return <span className={`status-pill ${tone}`}>{STATUS_LABELS[status] || status}</span>;
 }
 
 /* ------------------------------------------------------------------ */
 /* Employer                                                            */
 /* ------------------------------------------------------------------ */
-function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, showToast, t, lang, displayName, user }) {
-  const [listings, setListings] = useState(() => sampleJobs.slice(0, 2).map((job) => ({ ...job, owner: 'demo' })));
+function EmployerPanels({
+  tab,
+  setTab,
+  applications,
+  updateProfile,
+  showToast,
+  t,
+  lang,
+  displayName,
+  user,
+}) {
+  const [listings, setListings] = useState(() =>
+    db.list('jobs').filter((job) => job.ownerId === user?.id)
+  );
+  useEffect(
+    () =>
+      db.subscribe((snapshot) =>
+        setListings((snapshot.jobs || []).filter((job) => job.ownerId === user?.id))
+      ),
+    [user?.id]
+  );
   const [form, setForm] = useState(blankJob);
   const [editing, setEditing] = useState(null);
   const [errors, setErrors] = useState({});
   const [companies, setCompanies] = useState({
-    company: user?.name ? `${user.name} Co.` : 'Demo Company',
-    city: 'Riyadh',
-    industry: industries[0].slug,
-    about: '',
-    website: '',
+    company: user?.company || displayName || '',
+    city: user?.city || 'Riyadh',
+    industry: user?.industry || industries[0].slug,
+    about: user?.about || '',
+    website: user?.website || '',
   });
-  const [candidates, setCandidates] = useState([
-    { id: 'C-01', name: 'Sample Candidate A', trade: 'Electrician', city: 'Jeddah', experience: '5+ years', shortlisted: false },
-    { id: 'C-02', name: 'Sample Candidate B', trade: 'HVAC Technician', city: 'Dammam', experience: '3–5 years', shortlisted: false },
-    { id: 'C-03', name: 'Sample Candidate C', trade: 'Mason', city: 'Madinah', experience: '1–2 years', shortlisted: false },
-  ]);
 
   const set = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -197,9 +240,8 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
 
     const salaryValue = Number(form.salary);
     const record = {
-      id: editing || `DEMO-${Date.now().toString().slice(-5)}`,
       title: form.title,
-      company: (user?.name ? `${user.name} Co.` : 'Demo Company') + ' (sample)',
+      company: companies.company || displayName,
       city: form.city,
       industry: form.industry,
       type: form.type,
@@ -207,13 +249,17 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
       salary: salaryValue ? { min: salaryValue, max: Math.round(salaryValue * 1.3) } : null,
       posted: new Date().toISOString().slice(0, 10),
       description: form.description,
-      requirements: ['Add specific requirements before publishing a real vacancy.'],
+      requirements: [],
+      status: 'pending',
     };
 
-    setListings((prev) =>
-      editing ? prev.map((item) => (item.id === editing ? record : item)) : [record, ...prev]
-    );
-    showToast(editing ? t('Listing updated (demo)') : t('Demo listing published'));
+    if (editing) {
+      db.patch('jobs', editing, record);
+      showToast(t('Listing updated'));
+    } else {
+      db.add('jobs', record);
+      showToast(t('Job submitted for review'));
+    }
     setForm(blankJob);
     setEditing(null);
     setTab('jobs');
@@ -234,8 +280,8 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
   };
 
   const removeListing = (id) => {
-    setListings((prev) => prev.filter((item) => item.id !== id));
-    showToast(t('Listing removed (demo)'));
+    db.remove('jobs', id);
+    showToast(t('Listing removed'));
   };
 
   if (tab === 'post') {
@@ -243,7 +289,9 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
       <div className="dash-panel">
         <div className="card-panel">
           <h2>{editing ? t('Edit listing') : t('Post a job')}</h2>
-          <p className="hint">{t('Demo data — connect the backend before publishing real vacancies.')}</p>
+          <p className="hint">
+            {t('Submitted vacancies are reviewed by GoldenGlow before they appear publicly.')}
+          </p>
 
           <form onSubmit={publish} className="form-grid" noValidate>
             <div className="field">
@@ -306,7 +354,7 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
             </div>
             <div className="full" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button className="btn btn--primary" type="submit">
-                <Icon name="check" size={16} /> {editing ? t('Update listing') : t('Publish demo listing')}
+                <Icon name="check" size={16} /> {editing ? t('Update listing') : t('Submit for review')}
               </button>
               {editing && (
                 <button
@@ -332,7 +380,7 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
       <div className="dash-panel">
         <div className="card-panel">
           <h2>{t('My Jobs')}</h2>
-          <p className="hint">{t('Demo data — connect the backend before publishing real vacancies.')}</p>
+          <p className="hint">{t('Your postings and their review status.')}</p>
           {listings.length === 0 ? (
             <div className="empty-state">
               <Icon name="briefcase" size={26} />
@@ -366,7 +414,21 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
                       <td>{job.type}</td>
                       <td>{formatDate(job.posted, lang)}</td>
                       <td>
-                        <span className="status-pill status-pill--gold">{t('Demo listing')}</span>
+                        <span
+                          className={`status-pill ${
+                            job.status === 'verified'
+                              ? 'status-pill--green'
+                              : job.status === 'rejected'
+                                ? 'status-pill--red'
+                                : 'status-pill--gold'
+                          }`}
+                        >
+                          {job.status === 'verified'
+                            ? t('Live')
+                            : job.status === 'rejected'
+                              ? t('Rejected')
+                              : t('Pending review')}
+                        </span>
                       </td>
                       <td>
                         <div className="actions">
@@ -394,12 +456,12 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
       <div className="dash-panel">
         <div className="card-panel">
           <h2>{t('Applications')}</h2>
-          <p className="hint">{t('Applications submitted through this demo appear here.')}</p>
+          <p className="hint">{t('Applications to your vacancies appear here.')}</p>
           {applications.length === 0 ? (
             <div className="empty-state">
               <Icon name="file" size={26} />
               <h3>{t('No applications yet')}</h3>
-              <p>{t('Apply to a job and your status will appear here.')}</p>
+              <p>{t('Applications to your vacancies will appear here.')}</p>
             </div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -415,7 +477,7 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
                 </thead>
                 <tbody>
                   {applications.map((application) => (
-                    <tr key={application.jobId}>
+                    <tr key={application.id}>
                       <td>
                         <strong>{application.name}</strong>
                         <div style={{ fontSize: 11.5, color: '#938490' }}>{application.email}</div>
@@ -430,7 +492,7 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
                           className="btn btn--ghost btn--sm"
                           type="button"
                           onClick={() => {
-                            updateApplicationStatus(application.jobId, 'Shortlist');
+                            db.patch('applications', application.id, { status: 'shortlisted' });
                             showToast(`${application.name} ${t('Shortlisted').toLowerCase()}`);
                           }}
                         >
@@ -443,68 +505,6 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
               </table>
             </div>
           )}
-        </div>
-      </div>
-    );
-  }
-
-  if (tab === 'candidates') {
-    return (
-      <div className="dash-panel">
-        <div className="card-panel">
-          <h2>{t('Candidates')}</h2>
-          <p className="hint">{t('Sample candidate records for interface demonstration only.')}</p>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="dash-table">
-              <thead>
-                <tr>
-                  <th>{t('Candidates')}</th>
-                  <th>{t('Job title')}</th>
-                  <th>{t('City')}</th>
-                  <th>{t('Experience')}</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {candidates.map((candidate) => (
-                  <tr key={candidate.id}>
-                    <td>
-                      <strong>{candidate.name}</strong>
-                      <div style={{ fontSize: 11.5, color: '#938490' }}>{candidate.id}</div>
-                    </td>
-                    <td>{candidate.trade}</td>
-                    <td>{candidate.city}</td>
-                    <td>{candidate.experience}</td>
-                    <td>
-                      <button
-                        className={`btn btn--sm ${candidate.shortlisted ? 'btn--gold' : 'btn--ghost'}`}
-                        type="button"
-                        onClick={() => {
-                          setCandidates((prev) =>
-                            prev.map((c) =>
-                              c.id === candidate.id ? { ...c, shortlisted: !c.shortlisted } : c
-                            )
-                          );
-                          showToast(
-                            candidate.shortlisted
-                              ? `${candidate.name} ${t('Remove').toLowerCase()}`
-                              : `${candidate.name} ${t('Shortlisted').toLowerCase()}`
-                          );
-                        }}
-                      >
-                        {candidate.shortlisted ? t('Shortlisted') : t('Shortlist')}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="form-note">
-            {t(
-              'Contacting candidates requires a configured messaging or email service and the candidate’s consent.'
-            )}
-          </p>
         </div>
       </div>
     );
@@ -523,11 +523,11 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
         </div>
         <div className="dash-stat">
           <small>{t('Shortlisted')}</small>
-          <strong>{applications.filter((a) => a.status === 'Shortlist').length}</strong>
+          <strong>{applications.filter((a) => a.status === 'shortlisted').length}</strong>
         </div>
         <div className="dash-stat">
-          <small>{t('Candidates')}</small>
-          <strong>{candidates.length}</strong>
+          <small>{t('Pending review')}</small>
+          <strong>{listings.filter((job) => job.status === 'pending').length}</strong>
         </div>
       </div>
 
@@ -595,14 +595,31 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
             />
           </div>
         </div>
-        <button className="btn btn--primary btn--sm" style={{ marginTop: 14 }} type="button" onClick={() => showToast(t('Saved (demo)'))}>
+        <button
+          className="btn btn--primary btn--sm"
+          style={{ marginTop: 14 }}
+          type="button"
+          onClick={async () => {
+            const result = await updateProfile({
+              company: companies.company,
+              city: companies.city,
+              industry: companies.industry,
+              about: companies.about,
+              website: companies.website,
+            });
+            showToast(
+              result.error ? t('Could not save changes') : t('Saved'),
+              result.error ? 'error' : 'info'
+            );
+          }}
+        >
           <Icon name="check" size={15} /> {t('Save changes')}
         </button>
       </div>
 
       <div className="card-panel">
         <h2>{t('Applications')}</h2>
-        <p className="hint">{t('Applications submitted through this demo appear here.')}</p>
+        <p className="hint">{t('Latest applications to your vacancies.')}</p>
         {applications.length === 0 ? (
           <div className="empty-state">
             <Icon name="file" size={26} />
@@ -621,7 +638,7 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
               </thead>
               <tbody>
                 {applications.slice(0, 4).map((application) => (
-                  <tr key={application.jobId}>
+                  <tr key={application.id}>
                     <td>{application.name}</td>
                     <td>{application.jobTitle}</td>
                     <td>
@@ -641,26 +658,30 @@ function EmployerPanels({ tab, setTab, applications, updateApplicationStatus, sh
 /* ------------------------------------------------------------------ */
 /* Worker                                                              */
 /* ------------------------------------------------------------------ */
-function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t, lang, displayName, user }) {
+function WorkerPanels({
+  tab,
+  applications,
+  savedJobs,
+  toggleSaved,
+  updateProfile,
+  showToast,
+  t,
+  lang,
+  displayName,
+  user,
+}) {
   const [profile, setProfile] = useState({
-    name: displayName,
-    trade: 'Electrician',
-    city: 'Riyadh',
-    experience: '3–5 years',
-    phone: '',
-    bio: '',
+    name: user?.name || displayName,
+    trade: user?.trade || '',
+    city: user?.city || 'Riyadh',
+    experience: user?.experience || '1–2 years',
+    phone: user?.phone || '',
+    bio: user?.bio || '',
   });
-  // Saved jobs can be sample vacancies or admin-verified postings, so resolve
-  // them against the same pool the jobs browser shows.
   const [postedJobs, setPostedJobs] = useState(() => db.list('jobs'));
   useEffect(() => db.subscribe((snapshot) => setPostedJobs(snapshot.jobs || [])), []);
   const jobPool = useMemo(
-    () => [
-      ...postedJobs
-        .filter((job) => job.status === 'verified')
-        .map((job) => ({ ...job, verified: true })),
-      ...sampleJobs,
-    ],
+    () => postedJobs.filter((job) => job.status === 'verified'),
     [postedJobs]
   );
   const saved = useMemo(
@@ -677,7 +698,7 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
       <div className="dash-panel">
         <div className="card-panel">
           <h2>{t('My profile')}</h2>
-          <p className="hint">{t('This profile stays in your browser in demo mode.')}</p>
+          <p className="hint">{t('Your profile is stored with your GoldenGlow account.')}</p>
           <div className="profile-form">
             <div className="field">
               <label htmlFor="w-name">{t('Full name')}</label>
@@ -724,32 +745,32 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
             {t('Profile completion')}: {completion}%
           </p>
 
-          <button className="btn btn--primary btn--sm" type="button" style={{ marginTop: 14 }} onClick={() => showToast(t('Saved (demo)'))}>
+          <button
+            className="btn btn--primary btn--sm"
+            type="button"
+            style={{ marginTop: 14 }}
+            onClick={async () => {
+              const result = await updateProfile(profile);
+              showToast(
+                result.error ? t('Could not save changes') : t('Saved'),
+                result.error ? 'error' : 'info'
+              );
+            }}
+          >
             <Icon name="check" size={15} /> {t('Save changes')}
           </button>
         </div>
 
         <div className="card-panel">
-          <h2>{t('Upload CV / résumé')}</h2>
+          <h2>{t('CVs and certificates')}</h2>
           <p className="hint">
-            {t('Uploads are disabled in this front-end demo. Connect document storage (with private access controls) before enabling real CV uploads.')}
+            {t(
+              'Attach a CV when you apply for a vacancy. Files are stored privately and only shared with GoldenGlow staff.'
+            )}
           </p>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <div className="upload-box">
-              <Icon name="file" size={22} />
-              <div>
-                <strong>{t('Choose file')} — PDF, DOC</strong>
-                <small>{t('Stored privately and never shown publicly when enabled.')}</small>
-              </div>
-            </div>
-            <div className="upload-box">
-              <Icon name="award" size={22} />
-              <div>
-                <strong>{t('Upload certificates')}</strong>
-                <small>{t('Trade certificates, training records and licences.')}</small>
-              </div>
-            </div>
-          </div>
+          <Link className="btn btn--ghost btn--sm" to="/jobs">
+            <Icon name="search" size={14} /> {t('Browse vacancies')}
+          </Link>
         </div>
       </div>
     );
@@ -803,7 +824,7 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
       <div className="dash-panel">
         <div className="card-panel">
           <h2>{t('Application status')}</h2>
-          <p className="hint">{t('Applications submitted in this demo appear here.')}</p>
+          <p className="hint">{t('Your applications and their current status.')}</p>
           {applications.length === 0 ? (
             <div className="empty-state">
               <Icon name="file" size={26} />
@@ -826,7 +847,7 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
                 </thead>
                 <tbody>
                   {applications.map((application) => (
-                    <tr key={application.jobId}>
+                    <tr key={application.id}>
                       <td>
                         <strong>{application.jobTitle}</strong>
                       </td>
@@ -891,7 +912,7 @@ function WorkerPanels({ tab, applications, savedJobs, toggleSaved, showToast, t,
 
       <div className="card-panel">
         <h2>{t('My profile')}</h2>
-        <p className="hint">{user?.email || 'demo.worker@example.com'}</p>
+        <p className="hint">{user?.email || ''}</p>
         <div className="progress">
           <span style={{ width: `${completion}%` }} />
         </div>

@@ -1,14 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * Supabase client for real email + password accounts.
+ * Supabase client.
  *
- * Only the project URL and the *publishable* (anon) key are used here — both are
+ * Only the project URL and the publishable (anon) key are used here — both are
  * public values that are safe to ship in a browser bundle. The service-role key
- * must never appear in this project.
- *
- * Set them in `.env.local` for local development and in Vercel → Project →
- * Settings → Environment Variables for the deployed site:
+ * is used only by the serverless contact function and must never appear here.
  *
  *   VITE_SUPABASE_URL=https://<project-ref>.supabase.co
  *   VITE_SUPABASE_ANON_KEY=<publishable / anon key>
@@ -29,16 +26,43 @@ export const supabase = isAuthConfigured
     })
   : null;
 
-/** Normalise a Supabase user into the shape the UI uses. */
-export function mapUser(authUser) {
-  if (!authUser) return null;
-  const meta = authUser.user_metadata || {};
+/**
+ * Load the authoritative profile row for a user. A database trigger creates
+ * this row on sign-up; if it has not landed yet, callers fall back to auth
+ * metadata for display until the profile arrives.
+ */
+export async function fetchProfile(userId) {
+  if (!supabase || !userId) return null;
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, email, role, name, company, city, trade, phone, bio, experience, industry, about, website')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) return null;
+  return data;
+}
+
+/** Merge a profiles row + auth user into the shape the UI uses. */
+export function mapProfile(profile, authUser) {
+  if (!profile && !authUser) return null;
+  const meta = authUser?.user_metadata || {};
   return {
-    id: authUser.id,
-    email: authUser.email,
-    name: meta.name || (authUser.email ? authUser.email.split('@')[0] : ''),
-    role: meta.role === 'worker' ? 'worker' : 'employer',
-    company: meta.company || '',
+    id: profile?.id || authUser?.id,
+    email: profile?.email || authUser?.email || '',
+    name:
+      profile?.name ||
+      meta.name ||
+      (authUser?.email ? authUser.email.split('@')[0] : ''),
+    role: profile?.role || (meta.role === 'worker' ? 'worker' : 'employer'),
+    company: profile?.company || meta.company || '',
+    city: profile?.city || '',
+    trade: profile?.trade || '',
+    phone: profile?.phone || '',
+    bio: profile?.bio || '',
+    experience: profile?.experience || '',
+    industry: profile?.industry || '',
+    about: profile?.about || '',
+    website: profile?.website || '',
   };
 }
 

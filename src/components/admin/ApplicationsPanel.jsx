@@ -3,7 +3,16 @@ import Icon from '../Icon';
 import { db } from '../../lib/db';
 import { fmtDate, matches, downloadCsv, statusTone } from './helpers';
 
-const STATUSES = ['Submitted', 'Shortlisted', 'Contacted', 'Hired', 'Declined'];
+const STATUSES = [
+  { value: 'submitted', label: 'Submitted' },
+  { value: 'under_review', label: 'Under review' },
+  { value: 'shortlisted', label: 'Shortlisted' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'hired', label: 'Hired' },
+  { value: 'declined', label: 'Declined' },
+];
+
+const statusLabel = Object.fromEntries(STATUSES.map((status) => [status.value, status.label]));
 
 export default function ApplicationsPanel({ data }) {
   const [query, setQuery] = useState('');
@@ -12,15 +21,10 @@ export default function ApplicationsPanel({ data }) {
     matches(row, query, ['name', 'email', 'jobTitle', 'company', 'city'])
   );
 
-  const openCv = (row) => {
-    const file = db.getFile(row.id);
-    if (!file?.dataUrl) return;
-    const link = document.createElement('a');
-    link.href = file.dataUrl;
-    link.download = file.name || 'cv';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+  const openCv = async (row) => {
+    if (!row.cv?.path) return;
+    const result = await db.getFileUrl(row.cv.path, 60);
+    if (result.url) window.open(result.url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -28,7 +32,7 @@ export default function ApplicationsPanel({ data }) {
       <h2>Applications</h2>
       <p className="admin-card__sub">
         Who applied to which job, with their contact details and attached CV. Change a status to keep
-        your own records in step with the worker dashboard.
+        the worker dashboard in step.
       </p>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -53,7 +57,7 @@ export default function ApplicationsPanel({ data }) {
               { label: 'Company', key: 'company' },
               { label: 'City', key: 'city' },
               { label: 'CV', value: (row) => row.cv?.name || '' },
-              { label: 'Status', key: 'status' },
+              { label: 'Status', value: (row) => statusLabel[row.status] || row.status },
               { label: 'Applied', value: (row) => fmtDate(row.createdAt) },
             ])
           }
@@ -81,9 +85,7 @@ export default function ApplicationsPanel({ data }) {
               {rows.map((row) => (
                 <tr key={row.id}>
                   <td>
-                    <strong>
-                      {row.name} {row.sample && <span className="pill pill--muted">Sample</span>}
-                    </strong>
+                    <strong>{row.name}</strong>
                     <small>{row.email}</small>
                     <br />
                     <small>{row.phone}</small>
@@ -100,8 +102,7 @@ export default function ApplicationsPanel({ data }) {
                         type="button"
                         className="btn btn--ghost btn--sm"
                         onClick={() => openCv(row)}
-                        disabled={!db.getFile(row.id)}
-                        title={db.getFile(row.id) ? 'Download CV' : 'CV was too large to keep in browser storage'}
+                        title="Open CV (signed link, 60 seconds)"
                       >
                         <Icon name="download" size={13} /> {row.cv.name}
                       </button>
@@ -112,13 +113,15 @@ export default function ApplicationsPanel({ data }) {
                   <td>
                     <select
                       className="select"
-                      style={{ minWidth: 128 }}
-                      value={row.status || 'Submitted'}
+                      style={{ minWidth: 138 }}
+                      value={row.status}
                       onChange={(e) => db.patch('applications', row.id, { status: e.target.value })}
                       aria-label={`Status for ${row.name}`}
                     >
                       {STATUSES.map((status) => (
-                        <option key={status}>{status}</option>
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
                       ))}
                     </select>
                   </td>
@@ -146,7 +149,9 @@ export default function ApplicationsPanel({ data }) {
                     </div>
                     {openId === row.id && (
                       <p style={{ fontSize: 12, color: 'var(--muted)', margin: '8px 0 0', maxWidth: 260 }}>
-                        <span className={`pill pill--${statusTone(row.status)}`}>{row.status}</span>
+                        <span className={`pill pill--${statusTone(row.status)}`}>
+                          {statusLabel[row.status] || row.status}
+                        </span>
                         <br />
                         {row.note || 'No cover note supplied.'}
                       </p>

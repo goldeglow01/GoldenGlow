@@ -1,4 +1,3 @@
-import Icon from '../Icon';
 import { fmtDate } from './helpers';
 
 const labels = {
@@ -10,9 +9,7 @@ const labels = {
 };
 
 function describe(collection, row) {
-  if (collection === 'accounts') {
-    return `${row.event === 'signin' ? 'Signed in' : 'Signed up'} — ${row.name || row.email} (${row.role})`;
-  }
+  if (collection === 'accounts') return `${row.name || row.email} (${row.role})`;
   if (collection === 'applications') return `${row.name} applied for ${row.jobTitle} · ${row.city}`;
   if (collection === 'alerts') return `Saved search — ${row.email}`;
   if (collection === 'messages') return `${row.name} sent a ${row.inquiry || 'general'} enquiry`;
@@ -20,7 +17,7 @@ function describe(collection, row) {
   return '';
 }
 
-export default function OverviewPanel({ data, onGo, onSeed, onClearSample, hasSample }) {
+export default function OverviewPanel({ data, onGo }) {
   const accounts = data.accounts || [];
   const applications = data.applications || [];
   const jobs = data.jobs || [];
@@ -28,7 +25,7 @@ export default function OverviewPanel({ data, onGo, onSeed, onClearSample, hasSa
   const messages = data.messages || [];
 
   const tiles = [
-    { label: 'Accounts', value: accounts.length, note: 'Sign-ups and sign-ins', tab: 'accounts' },
+    { label: 'Accounts', value: accounts.length, note: 'Registered accounts', tab: 'accounts' },
     {
       label: 'Workers',
       value: accounts.filter((a) => a.role === 'worker').length,
@@ -80,21 +77,18 @@ export default function OverviewPanel({ data, onGo, onSeed, onClearSample, hasSa
       <div className="admin-card">
         <h2>Latest activity</h2>
         <p className="admin-card__sub">
-          Live from this browser — new sign-ups, applications and enquiries appear here as they happen.
+          Live from Supabase — new accounts, applications and enquiries appear here as they happen.
         </p>
 
         {feed.length === 0 ? (
           <div className="admin-empty">
-            <p style={{ margin: '0 0 10px' }}>No records yet. Activity will appear here in real time.</p>
-            <button type="button" className="btn btn--ghost btn--sm" onClick={onSeed}>
-              <Icon name="plus" size={14} /> Load sample rows
-            </button>
+            No records yet. Activity will appear here in real time.
           </div>
         ) : (
           <div className="admin-feed">
             {feed.map((item) => (
               <div className="admin-feed__row" key={`${item.collection}-${item.row.id}`}>
-                <span className={`pill pill--${item.row.sample ? 'muted' : 'info'}`}>
+                <span className={`pill pill--${item.row.isSample ? 'muted' : 'info'}`}>
                   {labels[item.collection]}
                 </span>
                 <p>{describe(item.collection, item.row)}</p>
@@ -104,19 +98,6 @@ export default function OverviewPanel({ data, onGo, onSeed, onClearSample, hasSa
           </div>
         )}
       </div>
-
-      {hasSample && (
-        <div className="admin-card" style={{ borderStyle: 'dashed' }}>
-          <h2>Sample rows are loaded</h2>
-          <p className="admin-card__sub" style={{ marginBottom: 12 }}>
-            Rows marked <span className="pill pill--muted">Sample</span> are placeholders for the layout.
-            Remove them before showing the panel to anyone.
-          </p>
-          <button type="button" className="btn btn--ghost btn--sm" onClick={onClearSample}>
-            <Icon name="trash" size={14} /> Remove sample rows
-          </button>
-        </div>
-      )}
     </>
   );
 }

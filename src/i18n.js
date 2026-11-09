@@ -493,6 +493,58 @@ export const ar = {
   'Want to speak to the team directly?': 'هل تريد التحدث مع الفريق مباشرة؟',
   'Send us your workforce requirement or your CV and the relevant person will reply.':
     'أرسل لنا احتياجك من القوى العاملة أو سيرتك الذاتية وسيرد عليك الشخص المسؤول.',
+
+  // Supabase data layer / accounts
+  'Sign in to apply': 'سجّل الدخول للتقديم',
+  'Create a free worker account to apply, upload your CV and track every application in your dashboard.':
+    'أنشئ حساب عامل مجاني للتقديم ورفع سيرتك الذاتية ومتابعة كل طلب من لوحة التحكم.',
+  'Already applied': 'تم التقديم بالفعل',
+  'You have already applied to this job. You can track its status in your dashboard.':
+    'لقد تقدمت لهذه الوظيفة بالفعل. يمكنك متابعة حالتها من لوحة التحكم.',
+  'Application saved, but the CV could not be uploaded.':
+    'تم حفظ الطلب، لكن تعذّر رفع السيرة الذاتية.',
+  'CV must be under 5 MB': 'يجب أن يكون حجم السيرة الذاتية أقل من 5 ميجابايت.',
+  'Your application is stored securely for this site. CV files go to private storage and are only accessible to you and GoldenGlow staff.':
+    'يُحفظ طلبك بأمان. تُخزَّن ملفات السيرة الذاتية في مساحة خاصة ولا يمكن الوصول إليها إلا لك ولموظفي جولدن جلو.',
+  'Your application has been saved and appears in the GoldenGlow admin panel. Track its status from your worker dashboard.':
+    'تم حفظ طلبك ويظهر في لوحة إدارة جولدن جلو. تابع حالته من لوحة تحكم العامل.',
+  'Accounts are not configured yet. Add the Supabase project URL and anon key to enable sign-in.':
+    'لم يتم إعداد الحسابات بعد. أضف رابط مشروع Supabase والمفتاح العام لتفعيل تسجيل الدخول.',
+  'Accounts are not configured yet. Add the Supabase project URL and anon key.':
+    'لم يتم إعداد الحسابات بعد. أضف رابط مشروع Supabase والمفتاح العام.',
+  'Database is not configured.': 'قاعدة البيانات غير مُعدة.',
+  Admin: 'الإدارة',
+  'Could not update saved jobs': 'تعذّر تحديث الوظائف المحفوظة',
+  'Could not save changes': 'تعذّر حفظ التغييرات',
+  Saved: 'تم الحفظ',
+  'Job submitted for review': 'تم إرسال الوظيفة للمراجعة',
+  'Submit for review': 'إرسال للمراجعة',
+  'Update listing': 'تحديث الإعلان',
+  'Listing updated': 'تم تحديث الإعلان',
+  'Listing removed': 'تم حذف الإعلان',
+  'Pending review': 'بانتظار المراجعة',
+  Live: 'منشور',
+  Rejected: 'مرفوض',
+  'Submitted vacancies are reviewed by GoldenGlow before they appear publicly.':
+    'تُراجع الوظائف المرسلة من جولدن جلو قبل ظهورها للعامة.',
+  'Your postings and their review status.': 'إعلاناتك وحالة مراجعتها.',
+  'Applications to your vacancies appear here.': 'تظهر هنا الطلبات المقدمة على وظائفك.',
+  'Applications to your vacancies will appear here.': 'ستظهر هنا الطلبات المقدمة على وظائفك.',
+  'Latest applications to your vacancies.': 'أحدث الطلبات على وظائفك.',
+  'Your applications and their current status.': 'طلباتك وحالتها الحالية.',
+  'Your profile is stored with your GoldenGlow account.': 'يُحفظ ملفك الشخصي مع حسابك في جولدن جلو.',
+  'CVs and certificates': 'السيرة الذاتية والشهادات',
+  'Attach a CV when you apply for a vacancy. Files are stored privately and only shared with GoldenGlow staff.':
+    'أرفق سيرتك الذاتية عند التقديم على وظيفة. تُحفظ الملفات بشكل خاص ولا تُشارك إلا مع موظفي جولدن جلو.',
+  'Enquiry saved, but the email could not be delivered': 'تم حفظ الاستفسار، لكن تعذّر إرسال البريد',
+  'Please retry, or email us at': 'يرجى المحاولة مرة أخرى، أو راسلنا على',
+  'Please email us directly at': 'يرجى مراسلتنا مباشرة على',
+  'Message could not be sent': 'تعذّر إرسال الرسالة',
+  'Enquiry saved in the site inbox, but email delivery is not switched on yet':
+    'تم حفظ الاستفسار في صندوق الموقع، لكن إرسال البريد غير مفعّل بعد',
+  'Enquiry saved to the GoldenGlow inbox': 'تم حفظ الاستفسار في صندوق جولدن جلو',
+  'Connect Supabase to load vacancies. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.':
+    'اربط Supabase لتحميل الوظائف. اضبط VITE_SUPABASE_URL و VITE_SUPABASE_ANON_KEY.',
 };
 
 export function translate(value, lang) {

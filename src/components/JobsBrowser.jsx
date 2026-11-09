@@ -4,7 +4,6 @@ import Icon from './Icon';
 import JobCard from './JobCard';
 import { JobDetailModal, ApplyModal } from './JobModals';
 import { useApp } from '../context/AppContext';
-import { jobs } from '../data/jobs';
 import { industries, industryName } from '../data/industries';
 import { cities, employmentTypes, experienceLevels } from '../data/site';
 import JobAlert from './JobAlert';
@@ -34,16 +33,11 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
   const [applyJob, setApplyJob] = useState(null);
   const [posted, setPosted] = useState(() => db.list('jobs'));
 
-  // Admin-verified postings join the sample catalogue, live.
+  // Only verified postings are public; RLS also hides other users' pending rows.
   useEffect(() => db.subscribe((snapshot) => setPosted(snapshot.jobs || [])), []);
 
   const pool = useMemo(
-    () => [
-      ...posted
-        .filter((job) => job.status === 'verified')
-        .map((job) => ({ ...job, verified: true })),
-      ...jobs,
-    ],
+    () => posted.filter((job) => job.status === 'verified'),
     [posted]
   );
 
@@ -211,6 +205,14 @@ export default function JobsBrowser({ syncUrl = false, limit = 6, compact = fals
       </div>
 
       <JobAlert filters={filters} />
+
+      {!db.isConfigured() && (
+        <p className="form-note" style={{ marginBottom: 14 }}>
+          {t(
+            'Connect Supabase to load vacancies. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
+          )}
+        </p>
+      )}
 
       <div className="jobs-meta">
         <span>

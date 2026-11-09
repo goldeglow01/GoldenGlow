@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { translate } from '../i18n';
-import { supabase, isAuthConfigured, mapUser, authErrorMessage } from '../lib/supabase';
+import {
+  supabase,
+  isAuthConfigured,
+  fetchProfile,
+  mapProfile,
+  authErrorMessage,
+} from '../lib/supabase';
 import { db } from '../lib/db';
 
 const AppContext = createContext(null);
@@ -18,17 +24,16 @@ const write = (key, value) => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    /* storage may be unavailable (private mode) — demo keeps working in memory */
+    /* storage may be unavailable (private mode) — the site still works */
   }
 };
 
 export function AppProvider({ children }) {
   const [lang, setLang] = useState(() => read('gg_lang', 'en'));
-  // Preview session is only used until Supabase credentials are configured.
-  const [user, setUser] = useState(() => (isAuthConfigured ? null : read('gg_preview_user', null)));
+  const [user, setUser] = useState(null);
   const [authReady, setAuthReady] = useState(!isAuthConfigured);
   const [savedJobs, setSavedJobs] = useState(() => read('gg_saved_jobs', []));
-  const [applications, setApplications] = useState(() => read('gg_applications', []));
+  const [applications, setApplications] = useState([]);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
@@ -39,52 +44,7 @@ export function AppProvider({ children }) {
     write('gg_lang', lang);
   }, [lang]);
 
-  useEffect(() => write('gg_saved_jobs', savedJobs), [savedJobs]);
-  useEffect(() => write('gg_applications', applications), [applications]);
-
-  // The admin panel edits the shared record store, not this component's state.
-  // Mirror status changes and deletions into the dashboard list so workers see
-  // the same status the office set.
-  useEffect(
-    () =>
-      db.subscribe((snapshot) => {
-        const rows = snapshot.applications || [];
-        setApplications((prev) => {
-          if (!prev.length) return prev;
-          const byJob = new Map(rows.map((row) => [row.jobId, row]));
-          const next = prev
-            .filter((app) => byJob.has(app.jobId))
-            .map((app) => ({ ...app, status: byJob.get(app.jobId).status || app.status }));
-          const unchanged =
-            next.length === prev.length &&
-            next.every(
-              (app, index) =>
-                app.jobId === prev[index].jobId && app.status === prev[index].status
-            );
-          return unchanged ? prev : next;
-        });
-      }),
-    []
-  );
-
-  // Keep the signed-in user in sync with Supabase (session restore + sign out
-  // triggered in another tab). Without credentials we stay in preview mode.
-  useEffect(() => {
-    if (!isAuthConfigured) return undefined;
-    let active = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setUser(mapUser(data.session?.user));
-      setAuthReady(true);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(mapUser(session?.user));
-    });
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const t = useCallback((value) => translate(value, lang), [lang]);
 
@@ -94,36 +54,119 @@ export function AppProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(null), 4200);
   }, []);
 
-  const signIn = useCallback(async ({ email, password, role = 'employer' }) => {
-    if (!isAuthConfigured) {
-      const next = { role, name: email.split('@')[0], email, id: 'preview', preview: true };
-      setUser(next);
-      write('gg_preview_user', next);
-      db.add('accounts', { event: 'signin', name: next.name, email, role, mode: 'local' });
-      return { error: null, user: next };
+  // Surface data-layer failures (RLS denials, missing migrations, offline).
+  useEffect(() => {
+    db.setErrorHandler((message) => showToast(message, 'error'));
+    return () => db.setErrorHandler(null);
+  }, [showToast]);
+
+  // Restore the Supabase session and load the authoritative profile row.
+  useEffect(() => {
+    if (!supabase) {
+      setAuthReady(true);
+      return undefined;
     }
+    let active = true;
+
+    const applySession = async (session) => {
+      if (!active) return;
+      if (!session?.user) {
+        setUser(null);
+        return;
+      }
+      const profile = await fetchProfile(session.user.id);
+      if (!active) return;
+      setUser(mapProfile(profile, session.user));
+    };
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        await applySession(data.session);
+        if (active) setAuthReady(true);
+      })
+      .catch(() => {
+        if (active) setAuthReady(true);
+      });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Defer Supabase calls out of the auth callback to avoid lock deadlocks.
+      setTimeout(() => {
+        void applySession(session).catch(() => {});
+      }, 0);
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Keep the profile (role changes, admin promotion) in sync.
+  useEffect(() => {
+    if (!supabase || !user?.id) return undefined;
+    const profileChannel = supabase
+      .channel(`profile:${user.id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => {
+          if (payload.new) setUser((prev) => (prev ? mapProfile(payload.new, null) : prev));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [user?.id]);
+
+  // Open/close the Supabase data connection whenever the session changes.
+  useEffect(() => {
+    if (!authReady) return undefined;
+    void db.connect(supabase, user);
+    return () => db.disconnect();
+  }, [authReady, user?.id, user?.role]);
+
+  // Mirror the data cache into React state for the UI.
+  useEffect(() => {
+    const unsubscribe = db.subscribe((snapshot) => {
+      setApplications(snapshot.applications || []);
+      if (user) setSavedJobs(snapshot.savedJobs || []);
+    });
+    return unsubscribe;
+  }, [user?.id, user?.role]);
+
+  // Signed-out visitors keep saved jobs in localStorage.
+  useEffect(() => {
+    if (!user) write('gg_saved_jobs', savedJobs);
+  }, [savedJobs, user?.id]);
+
+  useEffect(() => {
+    if (!user) setSavedJobs(read('gg_saved_jobs', []));
+  }, [user?.id]);
+
+  // Copy guest saved jobs into the account the first time they sign in.
+  useEffect(() => {
+    if (!user) return;
+    const local = read('gg_saved_jobs', []);
+    if (!local.length) return;
+    void db.mergeSavedJobs(local).then((result) => {
+      if (!result?.error) write('gg_saved_jobs', []);
+    });
+  }, [user?.id]);
+
+  const signIn = useCallback(async ({ email, password }) => {
+    if (!supabase) return { error: 'not-configured' };
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: authErrorMessage(error) };
-    const mapped = mapUser(data.user);
-    db.add('accounts', {
-      event: 'signin',
-      name: mapped?.name,
-      email: mapped?.email || email,
-      role: mapped?.role || role,
-      company: mapped?.company,
-      mode: 'live',
-    });
+    const profile = await fetchProfile(data.user.id);
+    const mapped = mapProfile(profile, data.user);
+    setUser(mapped);
     return { error: null, user: mapped };
   }, []);
 
   const signUp = useCallback(async ({ email, password, name, role, company }) => {
-    if (!isAuthConfigured) {
-      const next = { role, name: name || email.split('@')[0], email, company, id: 'preview', preview: true };
-      setUser(next);
-      write('gg_preview_user', next);
-      db.add('accounts', { event: 'signup', name: next.name, email, role, company, mode: 'local' });
-      return { error: null, needsConfirmation: false, user: next };
-    }
+    if (!supabase) return { error: 'not-configured' };
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -133,53 +176,51 @@ export function AppProvider({ children }) {
       },
     });
     if (error) return { error: authErrorMessage(error) };
-    db.add('accounts', {
-      event: 'signup',
-      name,
-      email,
-      role,
-      company,
-      mode: 'live',
-      confirmed: Boolean(data.session),
-    });
     if (!data.session) return { error: null, needsConfirmation: true, email };
-    return { error: null, needsConfirmation: false, user: mapUser(data.user) };
+    const profile = await fetchProfile(data.user.id);
+    const mapped = mapProfile(profile, data.user);
+    setUser(mapped);
+    return { error: null, needsConfirmation: false, user: mapped };
   }, []);
 
   const signOut = useCallback(async () => {
     setUser(null);
-    if (!isAuthConfigured) {
-      try {
-        localStorage.removeItem('gg_preview_user');
-      } catch {
-        /* storage blocked */
+    if (supabase) await supabase.auth.signOut();
+  }, []);
+
+  const toggleSaved = useCallback(
+    async (id) => {
+      if (user) {
+        const result = await db.toggleSaved(id);
+        if (result?.error) showToast(t('Could not update saved jobs'), 'error');
+        return;
       }
-      return;
-    }
-    await supabase.auth.signOut();
-  }, []);
+      setSavedJobs((prev) => {
+        const next = prev.includes(id) ? prev.filter((jobId) => jobId !== id) : [...prev, id];
+        write('gg_saved_jobs', next);
+        return next;
+      });
+    },
+    [user, showToast, t]
+  );
 
-  const toggleSaved = useCallback((id) => {
-    setSavedJobs((prev) => (prev.includes(id) ? prev.filter((j) => j !== id) : [...prev, id]));
-  }, []);
+  const addApplication = useCallback(
+    (app) => {
+      if (!user) return null;
+      return db.add('applications', {
+        ...app,
+        applicantId: user.id,
+        name: app.name || user.name,
+        email: app.email || user.email,
+      });
+    },
+    [user]
+  );
 
-  const addApplication = useCallback((app) => {
-    const entry = { ...app, status: 'Submitted', appliedAt: new Date().toISOString() };
-    setApplications((prev) => [entry, ...prev.filter((a) => a.jobId !== app.jobId)]);
-
-    // Update the existing row instead of appending a duplicate when someone
-    // applies to the same vacancy twice. Same record shape the admin panel
-    // reads, so the office sees it live.
-    const existing = db.list('applications').find((row) => row.jobId === app.jobId);
-    if (existing) {
-      db.patch('applications', existing.id, entry);
-      return { ...existing, ...entry };
-    }
-    return db.add('applications', entry);
-  }, []);
-
-  const updateApplicationStatus = useCallback((jobId, status) => {
-    setApplications((prev) => prev.map((a) => (a.jobId === jobId ? { ...a, status } : a)));
+  const updateProfile = useCallback(async (changes) => {
+    const result = await db.updateProfile(changes);
+    if (!result.error) setUser((prev) => (prev ? { ...prev, ...changes } : prev));
+    return result;
   }, []);
 
   const value = useMemo(
@@ -198,7 +239,7 @@ export function AppProvider({ children }) {
       toggleSaved,
       applications,
       addApplication,
-      updateApplicationStatus,
+      updateProfile,
       toast,
       showToast,
     }),
@@ -214,7 +255,7 @@ export function AppProvider({ children }) {
       toggleSaved,
       applications,
       addApplication,
-      updateApplicationStatus,
+      updateProfile,
       toast,
       showToast,
     ]

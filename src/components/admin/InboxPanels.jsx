@@ -14,6 +14,17 @@ const filterText = (filters = {}) => {
   return bits.length ? bits.join(' · ') : 'All jobs';
 };
 
+const ENQUIRY_STATUSES = [
+  { value: 'new', label: 'New' },
+  { value: 'in_progress', label: 'In progress' },
+  { value: 'handled', label: 'Handled' },
+  { value: 'spam', label: 'Spam' },
+];
+
+const enquiryLabel = Object.fromEntries(
+  ENQUIRY_STATUSES.map((status) => [status.value, status.label])
+);
+
 export function AlertsPanel({ data }) {
   const rows = data.alerts || [];
 
@@ -21,8 +32,7 @@ export function AlertsPanel({ data }) {
     <div className="admin-card">
       <h2>Saved searches</h2>
       <p className="admin-card__sub">
-        Visitors who asked to be emailed jobs matching a search. Until an email service is connected,
-        use these addresses to send matching vacancies manually.
+        Visitors who asked to be emailed jobs matching a search.
       </p>
 
       {rows.length === 0 ? (
@@ -43,7 +53,6 @@ export function AlertsPanel({ data }) {
                 <tr key={row.id}>
                   <td>
                     <strong>{row.email}</strong>
-                    {row.sample && <span className="pill pill--muted">Sample</span>}
                   </td>
                   <td>{filterText(row.filters)}</td>
                   <td>
@@ -103,9 +112,7 @@ export function MessagesPanel({ data }) {
               {rows.map((row) => (
                 <tr key={row.id}>
                   <td>
-                    <strong>
-                      {row.name} {row.sample && <span className="pill pill--muted">Sample</span>}
-                    </strong>
+                    <strong>{row.name}</strong>
                     <small>{row.email}</small>
                     <br />
                     <small>{row.phone}</small>
@@ -114,6 +121,8 @@ export function MessagesPanel({ data }) {
                     <span className="pill pill--info">{row.inquiry || 'General'}</span>
                     <br />
                     <small>{fmtDate(row.createdAt)}</small>
+                    <br />
+                    <small>{row.delivered ? 'Emailed' : 'Stored only'}</small>
                   </td>
                   <td style={{ maxWidth: 320 }}>
                     <small>
@@ -125,16 +134,20 @@ export function MessagesPanel({ data }) {
                   <td>
                     <select
                       className="select"
-                      value={row.status || 'New'}
+                      value={row.status}
                       onChange={(e) => db.patch('messages', row.id, { status: e.target.value })}
                       aria-label={`Status for ${row.name}`}
                     >
-                      {['New', 'In progress', 'Handled'].map((status) => (
-                        <option key={status}>{status}</option>
+                      {ENQUIRY_STATUSES.map((status) => (
+                        <option key={status.value} value={status.value}>
+                          {status.label}
+                        </option>
                       ))}
                     </select>
                     <br />
-                    <span className={`pill pill--${statusTone(row.status)}`}>{row.status || 'New'}</span>
+                    <span className={`pill pill--${statusTone(row.status)}`}>
+                      {enquiryLabel[row.status] || row.status}
+                    </span>
                   </td>
                   <td>
                     <div className="admin-row-actions">

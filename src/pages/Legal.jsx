@@ -29,7 +29,7 @@ const pages = {
       },
       {
         h: 'Sharing with employers and partners',
-        p: 'We share a worker’s profile with an employer only when it is relevant to a vacancy the worker has applied for or asked us about. We use service providers for hosting, email and map display; they process data on our instructions. We may disclose information where we are legally required to do so.',
+        p: 'We share a worker’s profile with an employer only when it is relevant to a vacancy the worker has applied for or asked us about. We use service providers for hosting (Vercel), the database and private document storage (Supabase), email and map display; they process data on our instructions. We may disclose information where we are legally required to do so.',
       },
       {
         h: 'Recruitment fees',
@@ -122,8 +122,8 @@ const pages = {
         p: 'We keep your language choice (English or Arabic) so the site stays in the language you picked. These values are stored in your browser’s local storage and are never shared with anyone.',
       },
       {
-        h: 'Demonstration features',
-        p: 'The demo accounts, saved jobs and sample applications on this site are stored only in your own browser so the demo interface keeps working between visits. They are not sent to a server and can be cleared at any time.',
+        h: 'Account and job data',
+        p: 'Account details, job applications, saved jobs, job alerts and enquiries are stored in our database and private document storage, provided by Supabase, so they are available on every device you sign in from. Access is restricted to you and authorised GoldenGlow staff. You can ask us to delete your data at any time.',
       },
       {
         h: 'Small preferences',

@@ -1,120 +1,58 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
 import Icon from '../components/Icon';
-import { db, isEmpty, COLLECTIONS } from '../lib/db';
-import { adminSignIn, readAdminSession, endAdminSession } from '../lib/admin';
+import { db, isEmpty } from '../lib/db';
+import { useApp } from '../context/AppContext';
 import OverviewPanel from '../components/admin/OverviewPanel';
 import AccountsPanel from '../components/admin/AccountsPanel';
 import ApplicationsPanel from '../components/admin/ApplicationsPanel';
 import JobsPanel from '../components/admin/JobsPanel';
 import { AlertsPanel, MessagesPanel } from '../components/admin/InboxPanels';
-import { sampleRows } from '../components/admin/helpers';
 
-const errorCopy = {
-  empty: 'Enter both the admin email and password.',
-  credentials: 'Those admin details are not correct.',
-  insecure: 'Open this page over HTTPS (or localhost) to sign in.',
-};
-
-function AdminLogin({ onSuccess }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const result = await adminSignIn(email, password);
-    setLoading(false);
-    if (result.error) {
-      setError(errorCopy[result.error] || 'Sign in failed.');
-      return;
-    }
-    setError('');
-    onSuccess(result.session);
-  };
-
+function AdminNotice({ title, children }) {
   return (
-    <div className="admin-login">
-      <div className="admin-login__card">
-        <span className="admin-login__icon">
-          <Icon name="shield-check" size={24} />
+    <div className="container" style={{ paddingBlock: 100 }}>
+      <div className="auth-gate" style={{ margin: '0 auto', maxWidth: 480 }}>
+        <span className="auth-gate__icon">
+          <Icon name="shield-check" size={22} />
         </span>
-        <h1>Admin access</h1>
-        <p>Restricted area for the GoldenGlow team. Use your admin email and password.</p>
-
-        <form onSubmit={submit} style={{ display: 'grid', gap: 12 }} noValidate>
-          <div className="field">
-            <label htmlFor="admin-email">Admin email</label>
-            <input
-              id="admin-email"
-              className="input"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="username"
-              required
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="admin-password">Password</label>
-            <input
-              id="admin-password"
-              className="input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </div>
-
-          {error && (
-            <p className="field-error" role="alert">
-              {error}
-            </p>
-          )}
-
-          <button className="btn btn--primary btn--block" type="submit" disabled={loading}>
-            {loading ? 'Checking…' : 'Sign in to admin'}
-          </button>
-        </form>
-
-        <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 14, lineHeight: 1.6 }}>
-          This page is not linked from the site menu. Sign-in expires after 8 hours.
-        </p>
+        <h1>{title}</h1>
+        {children}
       </div>
     </div>
   );
 }
 
 export default function AdminPage() {
-  const [session, setSession] = useState(() => readAdminSession());
+  const { user, authReady, signOut } = useApp();
   const [data, setData] = useState(() => db.snapshot());
   const [tab, setTab] = useState('overview');
 
   useEffect(() => db.subscribe(setData), []);
 
-  const hasSample = useMemo(
-    () => COLLECTIONS.some((name) => (data[name] || []).some((row) => row.sample)),
-    [data]
-  );
+  if (!authReady) {
+    return (
+      <div className="container" style={{ padding: '90px 0', textAlign: 'center', color: 'var(--muted)' }}>
+        Checking your session…
+      </div>
+    );
+  }
 
-  const seed = () => {
-    const rows = sampleRows();
-    Object.entries(rows).forEach(([collection, list]) => list.forEach((row) => db.add(collection, row)));
-  };
+  if (!user) return <Navigate to="/login?next=/admin" replace />;
 
-  const clearSample = () => {
-    COLLECTIONS.forEach((name) => {
-      (data[name] || [])
-        .filter((row) => row.sample)
-        .forEach((row) => db.remove(name, row.id));
-    });
-  };
-
-  if (!session) return <AdminLogin onSuccess={setSession} />;
+  if (user.role !== 'admin') {
+    return (
+      <AdminNotice title="Not authorized">
+        <p>
+          This area is restricted to GoldenGlow administrators. Signed in as{' '}
+          <strong>{user.email}</strong>.
+        </p>
+        <Link className="btn btn--primary" to="/">
+          Back to the site
+        </Link>
+      </AdminNotice>
+    );
+  }
 
   const tabs = [
     { key: 'overview', label: 'Overview', icon: 'layers' },
@@ -137,8 +75,8 @@ export default function AdminPage() {
           <div>
             <h1>GoldenGlow admin</h1>
             <p>
-              Signed in as {session.email} ·{' '}
-              {isEmpty(data) ? 'no records yet' : 'live data from this browser'}
+              Signed in as {user.email} ·{' '}
+              {isEmpty(data) ? 'no records yet' : 'live data from Supabase'}
             </p>
           </div>
           <div className="admin-head__actions">
@@ -146,14 +84,7 @@ export default function AdminPage() {
             <Link className="btn btn--ghost btn--sm" to="/">
               <Icon name="eye" size={14} /> View site
             </Link>
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={() => {
-                endAdminSession();
-                setSession(null);
-              }}
-            >
+            <button type="button" className="btn btn--ghost btn--sm" onClick={signOut}>
               <Icon name="log-in" size={14} /> Sign out
             </button>
           </div>
@@ -181,26 +112,12 @@ export default function AdminPage() {
           </nav>
 
           <div className="admin-main">
-            {tab === 'overview' && (
-              <OverviewPanel
-                data={data}
-                onGo={setTab}
-                onSeed={seed}
-                onClearSample={clearSample}
-                hasSample={hasSample}
-              />
-            )}
+            {tab === 'overview' && <OverviewPanel data={data} onGo={setTab} />}
             {tab === 'accounts' && <AccountsPanel data={data} />}
             {tab === 'applications' && <ApplicationsPanel data={data} />}
             {tab === 'jobs' && <JobsPanel data={data} />}
             {tab === 'alerts' && <AlertsPanel data={data} />}
             {tab === 'messages' && <MessagesPanel data={data} />}
-
-            {tab !== 'overview' && hasSample && (
-              <button type="button" className="btn btn--ghost btn--sm" onClick={clearSample}>
-                <Icon name="trash" size={14} /> Remove sample rows
-              </button>
-            )}
           </div>
         </div>
       </div>

@@ -179,7 +179,7 @@ export default function JobsPanel({ data }) {
                   <tr key={row.id}>
                     <td>
                       <strong>
-                        {row.title} {row.sample && <span className="pill pill--muted">Sample</span>}
+                        {row.title} {row.isSample && <span className="pill pill--muted">Sample</span>}
                       </strong>
                       <small>
                         {row.company} · {row.id}

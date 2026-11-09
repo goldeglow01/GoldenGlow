@@ -13,8 +13,9 @@ npm run build    # production build in dist/
 npm run preview  # serve the production build
 ```
 
-The marketing pages need no environment variables. Real accounts need two Supabase values (see
-**Accounts & sign-in** below); without them the sign-in screen runs in preview mode.
+Supabase provides accounts and all operational data. Create a project, run the migrations in
+`supabase/migrations/`, and set the environment variables listed under
+**Accounts, database & sign-in** below.
 
 **Source:** https://github.com/Raisevane/GoldenGlow
 
@@ -29,33 +30,41 @@ npx vercel deploy --prod --project goldenglow
 Deploying into the client's own Vercel account (import the repo, environment variables,
 custom domain) is covered step by step in [DEPLOY.md](DEPLOY.md).
 
-## Accounts & sign-in
+## Accounts, database & sign-in
 
-Sign up and sign in use **Supabase email + password auth**, called directly from the browser with
-the public project URL and publishable (anon) key. Create a free project at
-[supabase.com](https://supabase.com), then copy the two values from **Project settings → API**:
+Supabase provides **both** authentication and the Postgres database. Create a free project at
+[supabase.com](https://supabase.com), then:
+
+1. Run `supabase/migrations/0001_init.sql` and `0002_seed_demo.sql` in the SQL editor (or
+   `supabase db push`). This creates all tables, RLS policies, triggers, the private `cvs` bucket
+   and the realtime publication.
+2. Copy the project URL, anon key and service-role key into the environment:
 
 ```bash
-# .env.local  (already git-ignored) and Vercel → Settings → Environment Variables
+# .env.local (git-ignored) and Vercel → Settings → Environment Variables
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
-VITE_SUPABASE_ANON_KEY=<publishable / anon key>
+VITE_SUPABASE_ANON_KEY=<publishable / anon key>       # browser
+SUPABASE_URL=https://<project-ref>.supabase.co        # server (contact API)
+SUPABASE_SERVICE_ROLE_KEY=<service role key>          # server only — never VITE_
 ```
 
-In Supabase, **Authentication → Providers → Email** should stay enabled. Leave *Confirm email* on
-if you want new accounts to verify their address first (the form then shows a “check your inbox”
-step); turn it off and sign-up signs the user straight in.
+3. **Authentication → Providers → Email** stays enabled. *Confirm email* can stay on (the form
+   shows a “check your inbox” step) or be turned off for instant sign-in.
+4. **Authentication → URL Configuration:** Site URL `https://goldenglowqr.com`, redirect URLs
+   `https://goldenglowqr.com/**` and `http://localhost:5173/**`.
+5. Sign up once, then promote the admin account:
 
-What is real once the two values are set:
+```sql
+update public.profiles set role = 'admin' where email = 'info@goldenglowqr.com';
+```
 
-- sign up, sign in, sign out, session restore on reload and across tabs, password rules,
-  duplicate-email and wrong-password errors;
-- each account's role (employer / worker), full name and company or trade, stored in the user's
-  Supabase metadata and read back on every device;
-- `/dashboard/*` is gated: signed-out visitors get a “sign in to continue” panel.
+`/admin` is only rendered for profiles whose role is `admin`. Everyone else signs in through the
+normal `/login` page; there is no separate admin password.
 
-What is still local demo data (by design, until a database is added): posted jobs, applications
-and saved jobs, which live in the browser's `localStorage`. The Supabase **service-role key must
-never** be added to this project — only the publishable key is used.
+What is real once the migrations are applied: accounts and roles, profiles, jobs and employer
+postings, applications, saved jobs, alerts, enquiries and private CV storage. Data is shared across
+devices and kept live through Supabase Realtime. The marketing pages still render without a
+database, but jobs and dashboards need the Supabase values.
 
 ## Routes
 
@@ -63,9 +72,9 @@ never** be added to this project — only the publishable key is used.
 | --- | --- |
 | `/` | Homepage: hero slideshow, trust stats, “Why GoldenGlow is #1 in Saudi Arabia”, industries carousel, about, employer services, jobs, process, countries, gallery, 3D globe, contact |
 | `/jobs` | Full job portal with live search, filters, sorting, load-more, detail modal and application form |
-| `/signup`, `/login` | Role-based (Employer / Worker) demo authentication |
-| `/dashboard/employer` | Employer demo dashboard: company profile, post/edit listings, applications, candidates, shortlist |
-| `/dashboard/worker` | Worker demo dashboard: profile, skills, CV/certificate upload placeholders, saved jobs, application status |
+| `/signup`, `/login` | Supabase email + password accounts (Employer / Worker) |
+| `/dashboard/employer` | Employer dashboard: company profile, post/edit listings (pending review), applications |
+| `/dashboard/worker` | Worker dashboard: profile, saved jobs, application status, CV upload when applying |
 | `/team` | Team page: each member in an alternating photo-and-story row |
 | `/licences` | Standalone Licences page: every licence button opens it in the same tab, and each document can be viewed full-size |
 | `/legal/privacy`, `/legal/terms`, `/legal/cookies` | Privacy Policy, Terms & Conditions and Cookie Policy (written for review before launch) |
@@ -204,42 +213,40 @@ and `npx tsc --init` if you also want TypeScript. Keeping component code in
 that path for imports (`@/components/ui/...`); anything outside it is treated as app code and
 never regenerated. None of this is required for the current build.
 
-## Connecting a backend
+## How the data layer works
 
-The front end is intentionally honest about what is not wired up yet. Integration points:
+Supabase is both the auth provider and the database. The browser never talks to Postgres
+directly without rules: every table has Row Level Security, and the private `cvs` bucket only
+allows the owner and admins to read files.
 
-1. **Contact / manpower enquiry — live email delivery.** `api/contact.js` is a Vercel
-   serverless function that emails every enquiry from the contact form to the GoldenGlow
-   Private Email inbox over authenticated SMTP. The browser posts to `/api/contact`
-   (`contactEndpoint` in `src/data/site.js`).
+- `src/lib/db.js` is a cached facade over Supabase. Components read synchronously from the cache;
+  `connect()` hydrates it, Realtime keeps it fresh, and mutations are optimistic.
+- Jobs: the public sees `status = 'verified'`. Employers create `pending` jobs; an admin verifies
+  them in `/admin`. Employer edits go back to `pending`.
+- Applications require a signed-in worker. CVs upload to Storage under
+  `{user_id}/{application_id}/`, and admins open them via short-lived signed URLs.
+- Saved jobs are local for signed-out visitors and copied into `saved_jobs` on sign-in.
+- Enquiries are written by `api/contact.js` using the service role, then emailed over SMTP.
+  Without `SMTP_PASS` the row is still stored and the form tells the visitor to email directly.
 
-   Set these in **Vercel → Settings → Environment Variables** (Production), then redeploy:
+### Contact delivery
 
-   ```bash
-   SMTP_PASS=<mailbox password for info@goldenglowqr.com>   # required
-   SMTP_USER=info@goldenglowqr.com                         # default
-   SMTP_HOST=mail.privateemail.com                         # default
-   SMTP_PORT=465                                           # 465 TLS / 587 STARTTLS
-   MAIL_TO=info@goldenglowqr.com                           # default
-   ```
+`api/contact.js` is a Vercel serverless function. Set these in **Vercel → Settings → Environment
+Variables** (Production), then redeploy:
 
-   Local `npm run dev` has no `/api` runtime, so submissions there simply fall back to the
-   site inbox. Until `SMTP_PASS` exists the endpoint answers `503 NOT_CONFIGURED`; the form then
-   keeps the enquiry in the admin inbox and tells the visitor to email `info@goldenglowqr.com`
-   directly. Point `contactEndpoint` at any other endpoint (Formspree, a CRM webhook…) to change
-   provider without touching the form.
-2. **Vacancies** — replace `jobs` in `src/data/jobs.js` with a fetch from your API/CRM using the
-   same shape (`id, title, company, city, industry, type, experience, salary {min,max}|null, posted, description, requirements`).
-   The filters, sorting, pagination and modals work off that array.
-3. **Authentication** — `/login` and `/signup` are demo flows: accounts live in `localStorage`
-   (`gg_demo_user`). Swap `signIn`/`signUp` in `src/context/AppContext.jsx` for real auth
-   (session cookie or token) and never store passwords in the browser.
-4. **Applications** — `addApplication` in `src/context/AppContext.jsx` is the single place to POST
-   an application. Currently it only writes to `localStorage`.
-5. **CV / certificate uploads** — deliberately disabled. Enable only with private object storage
-   and server-side access checks; never expose documents on public URLs.
-6. **Job posting** — employer listings are demo state inside `src/pages/Dashboard.jsx`; connect
-   them to your job API to persist.
+```bash
+SUPABASE_URL=https://<project-ref>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service role key>          # server only — never VITE_
+SMTP_PASS=<mailbox password for info@goldenglowqr.com>
+SMTP_USER=info@goldenglowqr.com                       # default
+SMTP_HOST=mail.privateemail.com                       # default
+SMTP_PORT=465                                         # 465 TLS / 587 STARTTLS
+MAIL_TO=info@goldenglowqr.com                         # default
+```
+
+Local `npm run dev` has no `/api` runtime; use `npx vercel dev` if you need to test the contact
+form end to end. Applications, jobs, profiles and admin data work under `vite` because they use
+Supabase directly.
 
 ## Project structure
 
@@ -248,11 +255,14 @@ src/
   components/    Header, Hero, SpotlightBackground, Clients, Stats, WhyTop, Industries, About, Services, JobsBrowser,
                  JobCard, JobModals, Modal, Countries, HowItWorks, WhyChoose, Showcase,
                  GlobeSection (Three.js), Team, WhatsAppButton, Contact, Footer, Logo, Icon, Reveal
-  context/       AppContext (language, demo session, saved jobs, applications, toasts)
-  data/          site.js, industries.js, jobs.js, content.js
-  pages/         Home, JobsPage, LicencesPage, AuthPage, Dashboard, Legal
+  context/       AppContext (language, Supabase session/profile, saved jobs, applications, toasts)
+  data/          site.js, industries.js, jobs.js (seed reference), content.js
+  lib/           db.js (Supabase-backed cache + realtime), supabase.js (client + profile mapper)
+  pages/         Home, JobsPage, LicencesPage, AuthPage, Dashboard, AdminPage, Legal
   styles/        site.css (complete design system: tokens, header, hero, sections, forms, admin),
                  hero-main.css (full-bleed hero + top-bar social icons), base.css (footer social links)
+supabase/
+  migrations/    0001_init.sql (tables, RLS, storage, realtime), 0002_seed_demo.sql
 public/
   images/        Optimised JPEGs (1600px max)
   flags/         Country flags
@@ -286,39 +296,25 @@ component inherits them), `--navy`/`--navy-900` the near-black plum used for dar
 - [ ] Add verified statistics (or remove the figures entirely)
 - [ ] Have privacy, terms, cookie and recruitment-compliance content reviewed
 - [ ] Add the official recruitment licence only once it is verified
-- [ ] Connect the contact endpoint, applications and document storage
+- [ ] Run the Supabase migrations, promote the admin account and test RLS with real users
 - [ ] Add real social profiles in `site.social`
 
 ## Admin panel (`/admin`)
 
 A private page, deliberately not linked from the site menu.
 
-- URL: `/admin` (e.g. https://goldenglowqr.com/admin)
-- Email: `info@goldenglowqr.com` (default in `src/lib/admin.js`; override with `VITE_ADMIN_EMAIL`)
-- Password: held by the business (stored only as a SHA-256 digest in `src/lib/admin.js`;
-  override with `VITE_ADMIN_PASSWORD_HASH` at build time).
-- Sessions last 8 hours and are kept in `sessionStorage`.
+- Sign in at `/login` with an account whose `profiles.role` is `admin` (see the SQL above).
+- `/admin` renders only for that role; everyone else sees “not authorized”.
+- Access is enforced by Row Level Security in the database, not by a browser password.
 
-Panels: **Overview** (live counters + activity feed), **Accounts** (every sign-up and sign-in with
-role, company/trade), **Applications** (who applied to which job, phone, cover note, CV download,
-status control), **Jobs** (post a vacancy, then Verify / Reject — verified jobs appear on the public
-jobs page with a “Verified” badge), **Saved searches** (job-alert emails with the exact filters) and
-**Enquiries** (contact-form messages with a status).
+Panels: **Overview** (live counters + activity feed), **Accounts** (registered profiles),
+**Applications** (status changes and short-lived signed CV links), **Jobs** (create, verify/reject,
+delete — verified jobs appear publicly with a “Verified” badge), **Saved searches** and
+**Enquiries**. “Export CSV” works on the current view.
 
-Row actions and “Export CSV” work on whatever the panel is showing. Rows marked *Sample* come from
-**Load sample rows** and should be removed before showing the panel to anyone.
+The demo vacancies from `0002_seed_demo.sql` are marked `is_sample = true`; delete them in the Jobs
+panel once real vacancies are published.
 
-### Where the data lives
-
-`src/lib/db.js` is the single store the site writes to and the panel reads from. It keeps records in
-this browser (`localStorage`) and syncs every tab live via `storage` events and a BroadcastChannel —
-so two tabs (or two windows) on the same computer update each other instantly.
-
-That means: real records, real CV attachments, real status changes — **but per browser**. Sign-ups
-from a visitor's phone will not appear in your copy until a hosted database is connected. To go
-cross-device, set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (see `.env.example`) and replace the
-bodies of `db.add / patch / remove / list` with `supabase.from('records')` calls plus a Realtime
-subscription; no panel code changes.
-
-The browser-side admin gate is a convenience lock, not server security. Before the panel holds data
-that matters, move the check to Supabase auth (admin role) or a Vercel function.
+All data lives in Supabase Postgres; CVs live in the private `cvs` Storage bucket. `src/lib/db.js`
+holds a cache for synchronous rendering and keeps it fresh with Realtime — see
+**How the data layer works** above.

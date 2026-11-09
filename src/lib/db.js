@@ -1,67 +1,43 @@
 /**
- * GoldenGlow — shared record store used by the site and the admin panel.
+ * GoldenGlow data layer — Supabase-backed.
  *
- * One place where the site writes what people do (sign up, sign in, apply,
- * save a search, send an enquiry) and where the admin panel reads it back.
+ * The UI still reads synchronously (`db.list`, `db.snapshot`) from an in-memory
+ * cache. `connect()` hydrates that cache from Supabase, Realtime keeps it fresh,
+ * and mutations are optimistic: the cache updates immediately, then the row is
+ * written to Postgres. Authorization is enforced by Row Level Security in the
+ * database; the client cache is only a view of what RLS allowed.
  *
- * Storage modes
- * -------------
- * 1. Local mode (default): records live in this browser's localStorage. Every
- *    tab and window of the site stays in sync live through the `storage` event
- *    and a BroadcastChannel, so the admin panel updates the moment a visitor
- *    action happens in another tab.
- * 2. Hosted mode: the same API is the seam for a real database. Set
- *    VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY (see src/lib/supabase.js) and
- *    replace the bodies below with `supabase.from('records')` calls to share
- *    records between devices and people. Nothing in the UI changes.
- *
- * What local mode can and cannot do: it is genuinely real data — not mock
- * rows — but it is per-browser. Two phones in two cities will each have their
- * own store until a hosted database is connected.
+ * Collections:
+ *   jobs          -> public.jobs          (verified jobs for everyone; own/admin rows add more)
+ *   applications  -> public.applications  (RLS: own / employer's jobs / admin)
+ *   alerts        -> public.job_alerts    (admin view only)
+ *   messages      -> public.enquiries     (admin view only; API writes)
+ *   accounts      -> public.profiles      (admin view only)
+ *   savedJobs     -> public.saved_jobs    (array of job ids for the signed-in user)
  */
 
-const KEY = 'gg_db_v1';
-const CV_KEY = 'gg_cvs_v1';
-const CHANNEL_NAME = 'gg_db_sync';
-// Keep the browser store bounded — localStorage quotas are small and this is
-// demo storage, not an archive.
-const MAX_ROWS = 500;
+const COLLECTIONS = ['accounts', 'applications', 'alerts', 'messages', 'jobs', 'savedJobs'];
 
-export const COLLECTIONS = ['accounts', 'applications', 'alerts', 'messages', 'jobs'];
+const emptyState = () => Object.fromEntries(COLLECTIONS.map((name) => [name, []]));
 
-const blank = () => Object.fromEntries(COLLECTIONS.map((name) => [name, []]));
+let state = emptyState();
+const listeners = new Set();
 
-const uid = (prefix) => {
+let client = null;
+let currentUser = null;
+let channel = null;
+let connectSeq = 0;
+let ready = false;
+let onError = () => {};
+const refreshTimers = new Map();
+const reported = new Set();
+
+const uid = (prefix = 'id') => {
   const random =
     globalThis.crypto?.randomUUID?.() ||
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   return `${prefix}-${random}`;
 };
-
-function readStore() {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return blank();
-    const parsed = JSON.parse(raw);
-    const next = blank();
-    COLLECTIONS.forEach((name) => {
-      if (Array.isArray(parsed?.[name])) next[name] = parsed[name];
-    });
-    return next;
-  } catch {
-    return blank();
-  }
-}
-
-let state = readStore();
-const listeners = new Set();
-
-let channel = null;
-try {
-  channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(CHANNEL_NAME) : null;
-} catch {
-  channel = null; // older Safari — the storage event still keeps other tabs in sync
-}
 
 function emit() {
   listeners.forEach((listener) => {
@@ -73,76 +49,416 @@ function emit() {
   });
 }
 
-function persist(next) {
-  state = next;
+function report(message) {
+  const text = String(message || 'Something went wrong');
+  // Avoid repeating the same error on every realtime tick.
+  if (reported.has(text)) return;
+  reported.add(text);
   try {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    onError(text);
   } catch {
-    /* quota or private mode — keep the in-memory copy so the session still works */
+    /* ignore toast failures */
   }
-  try {
-    channel?.postMessage({ at: Date.now() });
-  } catch {
-    /* channel closed */
-  }
+}
+
+function setCollection(name, rows) {
+  state = { ...state, [name]: rows };
   emit();
 }
 
-function reloadFromDisk() {
-  state = readStore();
+/* ------------------------------------------------------------------ */
+/* Row <-> UI mapping                                                  */
+/* ------------------------------------------------------------------ */
+
+const toDate = (value) => (value ? String(value).slice(0, 10) : '');
+
+const mapJob = (row) => ({
+  id: row.id,
+  ownerId: row.owner_id,
+  title: row.title,
+  company: row.company,
+  city: row.city,
+  industry: row.industry,
+  type: row.type,
+  experience: row.experience,
+  salary:
+    row.salary_min != null || row.salary_max != null
+      ? { min: row.salary_min ?? row.salary_max, max: row.salary_max ?? row.salary_min }
+      : null,
+  description: row.description,
+  requirements: row.requirements || [],
+  status: row.status,
+  source: row.source,
+  posted: toDate(row.posted_at || row.created_at),
+  isSample: Boolean(row.is_sample),
+  verified: row.status === 'verified',
+  createdAt: row.created_at,
+});
+
+const jobPatchToRow = (changes) => {
+  const row = {};
+  if ('title' in changes) row.title = changes.title;
+  if ('company' in changes) row.company = changes.company;
+  if ('city' in changes) row.city = changes.city;
+  if ('industry' in changes) row.industry = changes.industry;
+  if ('type' in changes) row.type = changes.type;
+  if ('experience' in changes) row.experience = changes.experience;
+  if ('description' in changes) row.description = changes.description;
+  if ('requirements' in changes) row.requirements = changes.requirements;
+  if ('status' in changes) row.status = changes.status;
+  if ('source' in changes) row.source = changes.source;
+  if ('isSample' in changes) row.is_sample = changes.isSample;
+  if ('ownerId' in changes) row.owner_id = changes.ownerId;
+  if ('salary' in changes) {
+    row.salary_min = changes.salary?.min ?? null;
+    row.salary_max = changes.salary?.max ?? null;
+  }
+  if ('posted' in changes && changes.posted) {
+    row.posted_at = `${changes.posted}T00:00:00Z`;
+  }
+  return row;
+};
+
+const jobToRow = (job, includeId = true) => ({
+  ...(includeId ? { id: job.id } : {}),
+  owner_id: job.ownerId ?? (currentUser?.role === 'employer' ? currentUser.id : null),
+  title: job.title,
+  company: job.company,
+  city: job.city,
+  industry: job.industry,
+  type: job.type,
+  experience: job.experience || '',
+  salary_min: job.salary?.min ?? null,
+  salary_max: job.salary?.max ?? null,
+  description: job.description,
+  requirements: job.requirements || [],
+  status: job.status || 'pending',
+  source: job.source || (currentUser?.role === 'employer' ? 'employer' : 'admin'),
+  posted_at: job.posted ? `${job.posted}T00:00:00Z` : new Date().toISOString(),
+  is_sample: Boolean(job.isSample),
+});
+
+const mapApplication = (row) => ({
+  id: row.id,
+  jobId: row.job_id,
+  jobOwnerId: row.job_owner_id,
+  applicantId: row.applicant_id,
+  jobTitle: row.job_title,
+  company: row.company,
+  city: row.city,
+  industry: row.industry,
+  name: row.name,
+  email: row.email,
+  phone: row.phone,
+  note: row.note || '',
+  cv: row.cv_path ? { name: row.cv_name, size: row.cv_size, path: row.cv_path } : null,
+  status: row.status,
+  statusNote: row.status_note || '',
+  appliedAt: row.created_at,
+  createdAt: row.created_at,
+  isSample: Boolean(row.is_sample),
+});
+
+const applicationToRow = (app) => ({
+  id: app.id,
+  job_id: app.jobId,
+  applicant_id: currentUser?.id,
+  name: app.name,
+  email: app.email,
+  phone: app.phone,
+  job_title: app.jobTitle || '',
+  company: app.company || '',
+  city: app.city || '',
+  industry: app.industry || '',
+  note: app.note || null,
+  status: 'submitted',
+});
+
+const APPLICATION_STATUS = {
+  Submitted: 'submitted',
+  'Under review': 'under_review',
+  Shortlist: 'shortlisted',
+  Shortlisted: 'shortlisted',
+  Contacted: 'contacted',
+  Hired: 'hired',
+  Declined: 'declined',
+  submitted: 'submitted',
+  under_review: 'under_review',
+  shortlisted: 'shortlisted',
+  contacted: 'contacted',
+  hired: 'hired',
+  declined: 'declined',
+};
+
+const applicationStatus = (value) => APPLICATION_STATUS[value] || 'submitted';
+
+const ENQUIRY_STATUS = {
+  New: 'new',
+  'In progress': 'in_progress',
+  Handled: 'handled',
+  Spam: 'spam',
+  new: 'new',
+  in_progress: 'in_progress',
+  handled: 'handled',
+  spam: 'spam',
+};
+
+const enquiryStatus = (value) => ENQUIRY_STATUS[value] || 'new';
+
+const mapEnquiry = (row) => ({
+  id: row.id,
+  name: row.name,
+  email: row.email,
+  phone: row.phone,
+  company: row.company,
+  city: row.city,
+  inquiry: row.inquiry,
+  industry: row.industry,
+  workers: row.workers != null ? String(row.workers) : '',
+  message: row.message,
+  status: row.status,
+  delivered: Boolean(row.email_sent),
+  reason: row.email_error || '',
+  createdAt: row.created_at,
+});
+
+const mapAlert = (row) => ({
+  id: row.id,
+  email: row.email,
+  filters: row.filters || {},
+  source: row.source,
+  createdAt: row.created_at,
+});
+
+const mapAccount = (row) => ({
+  id: row.id,
+  email: row.email,
+  name: row.name,
+  company: row.company,
+  role: row.role,
+  city: row.city || '',
+  trade: row.trade || '',
+  phone: row.phone || '',
+  event: 'signup',
+  mode: 'live',
+  createdAt: row.created_at,
+});
+
+/* ------------------------------------------------------------------ */
+/* Fetching                                                            */
+/* ------------------------------------------------------------------ */
+
+function isAdmin() {
+  return currentUser?.role === 'admin';
+}
+
+async function query(fn) {
+  if (!client) return [];
+  const { data, error } = await fn();
+  if (error) throw error;
+  return data || [];
+}
+
+async function fetchCollection(name) {
+  if (!client) return [];
+  switch (name) {
+    case 'jobs':
+      return (await query(() =>
+        client.from('jobs').select('*').order('posted_at', { ascending: false })
+      )).map(mapJob);
+    case 'applications':
+      if (!currentUser) return [];
+      return (await query(() =>
+        client.from('applications').select('*').order('created_at', { ascending: false })
+      )).map(mapApplication);
+    case 'savedJobs':
+      if (!currentUser) return [];
+      return (await query(() => client.from('saved_jobs').select('job_id'))).map((row) => row.job_id);
+    case 'alerts':
+      if (!isAdmin()) return [];
+      return (await query(() =>
+        client.from('job_alerts').select('*').order('created_at', { ascending: false })
+      )).map(mapAlert);
+    case 'messages':
+      if (!isAdmin()) return [];
+      return (await query(() =>
+        client.from('enquiries').select('*').order('created_at', { ascending: false })
+      )).map(mapEnquiry);
+    case 'accounts':
+      if (!isAdmin()) return [];
+      return (await query(() =>
+        client.from('profiles').select('*').order('created_at', { ascending: false })
+      )).map(mapAccount);
+    default:
+      return [];
+  }
+}
+
+async function refresh(name) {
+  if (!client) return;
+  try {
+    const rows = await fetchCollection(name);
+    setCollection(name, rows);
+    reported.clear();
+  } catch (error) {
+    report(error?.message || 'Could not load data');
+  }
+}
+
+async function refreshAll() {
+  const next = {};
+  for (const name of COLLECTIONS) {
+    try {
+      next[name] = await fetchCollection(name);
+    } catch (error) {
+      next[name] = state[name] || [];
+      report(error?.message || 'Could not load data');
+    }
+  }
+  state = { ...state, ...next };
   emit();
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (event) => {
-    if (event.key === KEY || event.key === null) reloadFromDisk();
+function schedule(name) {
+  clearTimeout(refreshTimers.get(name));
+  refreshTimers.set(
+    name,
+    setTimeout(() => {
+      refresh(name);
+    }, 220)
+  );
+}
+
+function teardownRealtime() {
+  refreshTimers.forEach((timer) => clearTimeout(timer));
+  refreshTimers.clear();
+  if (channel && client) {
+    try {
+      client.removeChannel(channel);
+    } catch {
+      /* already gone */
+    }
+  }
+  channel = null;
+}
+
+function setupRealtime() {
+  if (!client) return;
+  const tables = [
+    ['jobs', 'jobs'],
+    ['applications', 'applications'],
+    ['saved_jobs', 'savedJobs'],
+    ['profiles', 'accounts'],
+    ['job_alerts', 'alerts'],
+    ['enquiries', 'messages'],
+  ];
+  channel = client.channel('gg-db');
+  tables.forEach(([table, collection]) => {
+    channel.on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table },
+      () => schedule(collection)
+    );
   });
-  channel?.addEventListener('message', reloadFromDisk);
+  channel.subscribe();
 }
 
-/* ---------------------------------------------------------------- */
-/* Uploaded files (kept separately so the main store stays small)    */
-/* ---------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* Connection lifecycle                                                */
+/* ------------------------------------------------------------------ */
 
-let fileQueue = Promise.resolve();
+export async function connect(supabaseClient, user = null) {
+  const seq = ++connectSeq;
+  teardownRealtime();
+  client = supabaseClient || null;
+  currentUser = user || null;
+  ready = false;
+  state = emptyState();
+  emit();
 
-function readFiles() {
-  try {
-    const raw = localStorage.getItem(CV_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
+  if (!client) {
+    ready = true;
+    emit();
+    return;
   }
+
+  await refreshAll();
+  if (seq !== connectSeq) return;
+  setupRealtime();
+  ready = true;
+  emit();
 }
 
-function writeFile(id, value) {
-  const map = readFiles();
-  map[id] = value;
-  localStorage.setItem(CV_KEY, JSON.stringify(map));
-  return true;
+export function disconnect() {
+  connectSeq += 1;
+  teardownRealtime();
+  client = null;
+  currentUser = null;
+  ready = false;
+  state = emptyState();
+  emit();
 }
 
-function removeFile(id) {
-  try {
-    const map = readFiles();
-    if (!(id in map)) return;
-    delete map[id];
-    localStorage.setItem(CV_KEY, JSON.stringify(map));
-  } catch {
-    /* storage blocked */
+/* ------------------------------------------------------------------ */
+/* Persistence helpers                                                 */
+/* ------------------------------------------------------------------ */
+
+async function revert(collection) {
+  await refresh(collection);
+}
+
+async function insertJob(entry) {
+  if (!client) {
+    report('Database is not configured.');
+    return;
   }
+  const { error } = await client.from('jobs').insert(jobToRow(entry));
+  if (error) {
+    report(error.message);
+    await revert('jobs');
+    return;
+  }
+  await refresh('jobs');
 }
 
-function clearFiles() {
-  try {
-    localStorage.removeItem(CV_KEY);
-  } catch {
-    /* storage blocked */
+async function insertApplication(entry) {
+  if (!client || !currentUser) {
+    report('Sign in to apply for a job.');
+    await revert('applications');
+    return;
   }
+  const { error } = await client.from('applications').insert(applicationToRow(entry));
+  if (error) {
+    if (/job_not_open|job_not_found/.test(error.message)) {
+      report('This vacancy is no longer open.');
+    } else {
+      report(error.message);
+    }
+    await revert('applications');
+    return;
+  }
+  await refresh('applications');
 }
+
+async function insertAlert(entry) {
+  if (!client) {
+    report('Database is not configured.');
+    return;
+  }
+  const { error } = await client
+    .from('job_alerts')
+    .insert({ id: entry.id, email: entry.email, filters: entry.filters || {}, source: entry.source || 'jobs-browser' });
+  if (error) report(error.message);
+}
+
+/* ------------------------------------------------------------------ */
+/* Public API                                                          */
+/* ------------------------------------------------------------------ */
 
 export const db = {
-  /** Subscribe to the whole store. Returns an unsubscribe function. */
+  connect,
+  disconnect,
+
   subscribe(listener) {
     listeners.add(listener);
     listener(state);
@@ -157,83 +473,289 @@ export const db = {
     return state[collection] || [];
   },
 
-  add(collection, item) {
-    if (!COLLECTIONS.includes(collection)) throw new Error(`Unknown collection: ${collection}`);
-    const entry = {
-      createdAt: new Date().toISOString(),
-      ...item,
-      id: item.id || uid(collection),
-    };
-    persist({ ...state, [collection]: [entry, ...state[collection]].slice(0, MAX_ROWS) });
-    return entry;
+  isReady() {
+    return ready;
   },
 
-  patch(collection, id, changes) {
-    persist({
-      ...state,
-      [collection]: state[collection].map((row) =>
-        row.id === id ? { ...row, ...changes, updatedAt: new Date().toISOString() } : row
-      ),
-    });
+  isConfigured() {
+    return Boolean(client);
+  },
+
+  setErrorHandler(handler) {
+    onError = typeof handler === 'function' ? handler : () => {};
+  },
+
+  add(collection, item) {
+    if (!COLLECTIONS.includes(collection)) {
+      throw new Error(`Unknown collection: ${collection}`);
+    }
+    const entry = { createdAt: new Date().toISOString(), ...item };
+
+    if (collection === 'jobs') {
+      entry.id = entry.id || `GG-${Date.now().toString(36).toUpperCase()}-${uid('').slice(-3).toUpperCase()}`;
+      entry.verified = entry.status === 'verified';
+      setCollection('jobs', [entry, ...state.jobs.filter((row) => row.id !== entry.id)]);
+      void insertJob(entry);
+      return entry;
+    }
+
+    if (collection === 'applications') {
+      if (!currentUser) {
+        report('Sign in to apply for a job.');
+        return null;
+      }
+      entry.id = entry.id || uid('app');
+      entry.applicantId = currentUser.id;
+      entry.status = 'submitted';
+      entry.appliedAt = entry.appliedAt || entry.createdAt;
+      setCollection('applications', [
+        entry,
+        ...state.applications.filter(
+          (row) => !(row.jobId === entry.jobId && row.applicantId === currentUser.id)
+        ),
+      ]);
+      void insertApplication(entry);
+      return entry;
+    }
+
+    if (collection === 'alerts') {
+      entry.id = entry.id || uid('alert');
+      setCollection('alerts', [entry, ...state.alerts]);
+      void insertAlert(entry);
+      return entry;
+    }
+
+    report('This record cannot be created from the browser.');
+    return null;
+  },
+
+  patch(collection, id, changes = {}) {
+    if (collection === 'jobs') {
+      setCollection(
+        'jobs',
+        state.jobs.map((row) => (row.id === id ? { ...row, ...changes } : row))
+      );
+      if (!client) return;
+      const payload = jobPatchToRow(changes);
+      if (!Object.keys(payload).length) return;
+      void (async () => {
+        const { error } = await client.from('jobs').update(payload).eq('id', id);
+        if (error) {
+          report(error.message);
+          await revert('jobs');
+        } else {
+          await refresh('jobs');
+        }
+      })();
+      return;
+    }
+
+    if (collection === 'applications') {
+      const map = (row) => (row.id === id ? { ...row, ...changes } : row);
+      setCollection('applications', state.applications.map(map));
+      if (!client) return;
+      const payload = {};
+      if ('status' in changes) payload.status = applicationStatus(changes.status);
+      if ('statusNote' in changes) payload.status_note = changes.statusNote || null;
+      if (!Object.keys(payload).length) return;
+      void (async () => {
+        const { error } = await client.from('applications').update(payload).eq('id', id);
+        if (error) {
+          report(error.message);
+          await revert('applications');
+        } else {
+          await refresh('applications');
+        }
+      })();
+      return;
+    }
+
+    if (collection === 'messages') {
+      const map = (row) => (row.id === id ? { ...row, ...changes } : row);
+      setCollection('messages', state.messages.map(map));
+      if (!client) return;
+      const payload = {};
+      if ('status' in changes) payload.status = enquiryStatus(changes.status);
+      if ('emailSent' in changes) payload.email_sent = Boolean(changes.emailSent);
+      if (!Object.keys(payload).length) return;
+      void (async () => {
+        const { error } = await client.from('enquiries').update(payload).eq('id', id);
+        if (error) {
+          report(error.message);
+          await revert('messages');
+        } else {
+          await refresh('messages');
+        }
+      })();
+      return;
+    }
+
+    report('This record cannot be updated from the browser.');
   },
 
   remove(collection, id) {
-    persist({ ...state, [collection]: state[collection].filter((row) => row.id !== id) });
-    // Do not leave an uploaded CV behind when its application row is deleted.
-    removeFile(id);
-  },
-
-  clear(collection) {
-    persist({ ...state, [collection]: [] });
-    if (collection === 'applications') clearFiles();
-  },
-
-  /**
-   * Attach a CV / certificate to a record. Files are kept in this browser only
-   * (base64, capped so one upload cannot fill the quota) and are never served
-   * publicly. A production build should use private object storage instead.
-   */
-  saveFile(id, file) {
-    if (!file) return Promise.resolve({ stored: false, reason: 'empty' });
-    const meta = { name: file.name, size: file.size, type: file.type || 'application/octet-stream' };
-    const MAX = 260 * 1024;
-    if (file.size > MAX) return Promise.resolve({ stored: false, meta, reason: 'too-large' });
-
-    // Serialise read-modify-write cycles so two uploads started at the same
-    // time cannot overwrite each other's map.
-    const task = fileQueue.then(
-      () =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            try {
-              resolve(writeFile(id, { ...meta, dataUrl: reader.result }) ? { stored: true, meta } : { stored: false, meta, reason: 'quota' });
-            } catch {
-              resolve({ stored: false, meta, reason: 'quota' });
-            }
-          };
-          reader.onerror = () => resolve({ stored: false, meta, reason: 'read' });
-          reader.readAsDataURL(file);
-        })
-    );
-    fileQueue = task.then(
-      () => undefined,
-      () => undefined
-    );
-    return task;
-  },
-
-  getFile(id) {
-    try {
-      const raw = localStorage.getItem(CV_KEY);
-      const map = raw ? JSON.parse(raw) : {};
-      return map[id] || null;
-    } catch {
-      return null;
+    if (collection === 'accounts') {
+      report('Users are managed in Supabase Authentication.');
+      return;
     }
+
+    const rows = state[collection] || [];
+    if (collection === 'savedJobs') {
+      setCollection(
+        'savedJobs',
+        state.savedJobs.filter((jobId) => jobId !== id)
+      );
+    } else {
+      setCollection(
+        collection,
+        rows.filter((row) => row.id !== id)
+      );
+    }
+
+    if (!client) return;
+    const table = { jobs: 'jobs', applications: 'applications', alerts: 'job_alerts', messages: 'enquiries' }[collection];
+    if (!table) return;
+
+    void (async () => {
+      if (collection === 'applications') {
+        const row = rows.find((item) => item.id === id);
+        if (row?.cv?.path) {
+          try {
+            await client.storage.from('cvs').remove([row.cv.path]);
+          } catch {
+            /* storage policy may forbid it; the row still goes */
+          }
+        }
+      }
+      const { error } = await client.from(table).delete().eq('id', id);
+      if (error) {
+        report(error.message);
+        await revert(collection);
+      } else {
+        await refresh(collection);
+      }
+    })();
+  },
+
+  /* ---- saved jobs ------------------------------------------------- */
+
+  async toggleSaved(jobId) {
+    if (!client || !currentUser) return { error: 'auth' };
+    const saved = state.savedJobs.includes(jobId);
+    setCollection(
+      'savedJobs',
+      saved ? state.savedJobs.filter((id) => id !== jobId) : [...state.savedJobs, jobId]
+    );
+    const { error } = saved
+      ? await client.from('saved_jobs').delete().eq('user_id', currentUser.id).eq('job_id', jobId)
+      : await client.from('saved_jobs').insert({ user_id: currentUser.id, job_id: jobId });
+    if (error) {
+      report(error.message);
+      await refresh('savedJobs');
+      return { error: error.message };
+    }
+    await refresh('savedJobs');
+    return {};
+  },
+
+  async mergeSavedJobs(jobIds = []) {
+    if (!client || !currentUser || !jobIds.length) return {};
+    const rows = jobIds.map((jobId) => ({ user_id: currentUser.id, job_id: jobId }));
+    const { error } = await client.from('saved_jobs').upsert(rows, { onConflict: 'user_id,job_id' });
+    if (error) {
+      report(error.message);
+      return { error: error.message };
+    }
+    await refresh('savedJobs');
+    return {};
+  },
+
+  /* ---- profile ---------------------------------------------------- */
+
+  async updateProfile(changes = {}) {
+    if (!client || !currentUser) return { error: 'auth' };
+    const allowed = ['name', 'company', 'city', 'trade', 'phone', 'bio', 'experience', 'industry', 'about', 'website'];
+    const payload = Object.fromEntries(
+      Object.entries(changes).filter(([key]) => allowed.includes(key))
+    );
+    if (!Object.keys(payload).length) return {};
+    const { error } = await client.from('profiles').update(payload).eq('id', currentUser.id);
+    if (error) {
+      report(error.message);
+      return { error: error.message };
+    }
+    currentUser = { ...currentUser, ...payload };
+    return {};
+  },
+
+  /* ---- CV storage ------------------------------------------------- */
+
+  async uploadCv(applicationId, file) {
+    if (!client || !currentUser) return { error: 'auth' };
+    if (!file) return { error: 'empty' };
+    const MAX = 5 * 1024 * 1024;
+    if (file.size > MAX) return { error: 'too-large' };
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const type =
+      file.type ||
+      {
+        pdf: 'application/pdf',
+        doc: 'application/msword',
+        docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      }[ext] ||
+      'application/octet-stream';
+    if (!allowed.includes(type)) return { error: 'wrong-type' };
+
+    const safeName = file.name.replace(/[^\w.\- ]+/g, '_').slice(-100) || 'cv';
+    const path = `${currentUser.id}/${applicationId}/${safeName}`;
+    const { error } = await client.storage.from('cvs').upload(path, file, {
+      contentType: type,
+      upsert: true,
+    });
+    if (error) {
+      report(error.message);
+      return { error: error.message };
+    }
+
+    const { error: rowError } = await client
+      .from('applications')
+      .update({ cv_path: path, cv_name: file.name, cv_size: file.size })
+      .eq('id', applicationId);
+    if (rowError) {
+      report(rowError.message);
+      return { error: rowError.message };
+    }
+
+    setCollection(
+      'applications',
+      state.applications.map((row) =>
+        row.id === applicationId
+          ? { ...row, cv: { name: file.name, size: file.size, path } }
+          : row
+      )
+    );
+    await refresh('applications');
+    return { path };
+  },
+
+  async getFileUrl(path, expires = 60) {
+    if (!client || !path) return { error: 'missing' };
+    const { data, error } = await client.storage.from('cvs').createSignedUrl(path, expires);
+    if (error) {
+      report(error.message);
+      return { error: error.message };
+    }
+    return { url: data?.signedUrl };
   },
 };
 
 /** True when the whole store is empty — used for the admin empty state. */
 export const isEmpty = (snapshot) =>
   COLLECTIONS.every((name) => (snapshot[name] || []).length === 0);
+
+export { COLLECTIONS };

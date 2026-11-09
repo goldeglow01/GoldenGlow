@@ -38,6 +38,7 @@ const visuals = {
 };
 
 const errorCopy = {
+  'not-configured': 'Accounts are not configured yet. Add the Supabase project URL and anon key.',
   'invalid-credentials': 'That email and password do not match an account.',
   'email-taken': 'An account with this email already exists. Sign in instead.',
   'email-unconfirmed': 'Confirm your email address first — check your inbox for the link.',
@@ -67,6 +68,11 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
   const visual = visuals[role];
+  const requestedNext = params.get('next');
+  const nextUrl =
+    requestedNext && requestedNext.startsWith('/') && !requestedNext.startsWith('//')
+      ? requestedNext
+      : null;
 
   const set = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
@@ -106,7 +112,7 @@ export default function AuthPage() {
           return;
         }
         showToast(t('Account created. Welcome to GoldenGlow.'));
-        navigate(`/dashboard/${result.user?.role || role}`);
+        navigate(nextUrl || `/dashboard/${result.user?.role || role}`);
       } else {
         const result = await signIn({ email: form.email.trim(), password: form.password, role });
         if (result.error) {
@@ -114,7 +120,7 @@ export default function AuthPage() {
           return;
         }
         showToast(t('Welcome back'));
-        navigate(`/dashboard/${result.user?.role || role}`);
+        navigate(nextUrl || `/dashboard/${result.user?.role || role}`);
       }
     } catch {
       setFormError(t(errorCopy.network));
@@ -167,7 +173,7 @@ export default function AuthPage() {
             <div className="demo-note">
               <Icon name="shield" size={15} style={{ flex: 'none', marginTop: 1 }} />
               <span>
-                {t('Preview mode — accounts are not connected yet. Add the Supabase project URL and key to enable real email and password sign-in.')}
+                {t('Accounts are not configured yet. Add the Supabase project URL and anon key to enable sign-in.')}
               </span>
             </div>
           )}

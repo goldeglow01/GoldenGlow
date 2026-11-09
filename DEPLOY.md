@@ -24,10 +24,11 @@ billing, your environment variables.
 
 You get a URL such as `goldenglow-<something>.vercel.app`. That is the client site.
 
-## 2. Add the one required environment variable
+## 2. Email delivery (SMTP)
 
-The contact form sends enquiries to `info@goldenglowqr.com` through the serverless
-function in `api/contact.js`, which needs the mailbox password.
+The contact form stores every enquiry in Supabase (configured in section 3) and emails it to
+`info@goldenglowqr.com` through the serverless function in `api/contact.js`, which needs the
+mailbox password.
 
 **Vercel → your project → Settings → Environment Variables**
 
@@ -47,27 +48,44 @@ Optional overrides — these already have correct defaults, only set them to cha
 Then **Deployments → ⋯ → Redeploy**, because Vercel only applies new variables on a fresh
 deployment.
 
-Until `SMTP_PASS` is set the form does not fail silently: it records the enquiry, tells the
-visitor to email `info@goldenglowqr.com` directly, and the admin panel shows the message as
-not delivered.
+Until `SMTP_PASS` is set the form does not fail silently: the enquiry is still stored in Supabase
+with `email_sent = false`, the admin panel shows it as “Stored only”, and the visitor is told to
+email `info@goldenglowqr.com` directly.
 
-## 3. Optional: real sign-up / sign-in
+## 3. Supabase: accounts, database and CV storage
 
-Accounts use Supabase email + password auth, called from the browser.
+Supabase powers authentication **and** all site data. Without it, jobs, applications, saved jobs,
+alerts and the admin panel are empty.
 
 1. Create a free project at <https://supabase.com>.
-2. **Authentication → Providers → Email**: enable it (turn off "Confirm email" if you want
-   instant sign-in without a mail step).
-3. Add these two variables in Vercel (both are safe to expose in the browser bundle):
+2. Open **SQL Editor** and run, in order:
+   - `supabase/migrations/0001_init.sql`
+   - `supabase/migrations/0002_seed_demo.sql` (optional demo vacancies)
 
-| Name                    | Where to find it                            |
-| ----------------------- | ------------------------------------------- |
-| `VITE_SUPABASE_URL`     | Supabase → Project Settings → API → URL     |
-| `VITE_SUPABASE_ANON_KEY`| Supabase → Project Settings → API → anon key|
+   Or, with the Supabase CLI: `supabase db push`.
+3. **Authentication → Providers → Email**: enable it (turn off “Confirm email” if you want
+   instant sign-in without a mail step).
+4. **Authentication → URL Configuration**: Site URL `https://goldenglowqr.com`; redirect URLs
+   `https://goldenglowqr.com/**` and `http://localhost:5173/**`.
+5. Add these variables in Vercel:
+
+| Name                        | Where to find it                                  |
+| --------------------------- | ------------------------------------------------- |
+| `VITE_SUPABASE_URL`         | Supabase → Project Settings → API → URL           |
+| `VITE_SUPABASE_ANON_KEY`    | Project Settings → API → anon / publishable key   |
+| `SUPABASE_URL`              | Same URL (used by `api/contact.js`)               |
+| `SUPABASE_SERVICE_ROLE_KEY` | Project Settings → API → service_role (server only)|
 
 Never put the `service_role` key in a `VITE_` variable — it would be readable by every visitor.
 
-Without these the sign-in screen runs in a local preview mode; marketing pages are unaffected.
+6. Sign up once at `/signup`, then promote that account in the SQL editor:
+
+```sql
+update public.profiles set role = 'admin' where email = 'info@goldenglowqr.com';
+```
+
+Only `profiles.role = 'admin'` can open `/admin`. All authorization is enforced by RLS, not by the
+browser. CVs are stored in the private `cvs` Storage bucket created by the migration.
 
 ## 4. Custom domain
 
@@ -104,12 +122,16 @@ npm ci
 npm run dev     # http://127.0.0.1:5173
 ```
 
-Copy `.env.example` to `.env.local` and fill in values if you want mail or real accounts
-locally. `.env*` files are gitignored and must never be committed.
+Copy `.env.example` to `.env.local` and fill in the Supabase values (and SMTP if you need email
+locally). `.env*` files are gitignored and must never be committed.
+
+`npm run dev` serves the site, but the contact form needs the serverless function. Use
+`npx vercel dev` when testing email delivery locally. Jobs, applications, profiles and admin data
+work under plain `vite` because they talk to Supabase directly.
 
 ## What is NOT in the repository
 
-- Mailbox password and any API keys — they live only in Vercel environment variables.
-- Admin records, sign-ups, applications, saved jobs — these are stored in the browser
-  (localStorage) per device, so a newly imported deployment starts with an empty admin panel.
-  Export before switching domains if you need to carry data across.
+- Mailbox password, service-role key and other secrets — they live only in Vercel environment
+  variables.
+- Accounts, jobs, applications, saved jobs and enquiries — these live in Supabase Postgres.
+- CV files — they live in the private Supabase Storage bucket `cvs`.
