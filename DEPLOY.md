@@ -87,6 +87,19 @@ update public.profiles set role = 'admin' where email = 'info@goldenglowqr.com';
 Only `profiles.role = 'admin'` can open `/admin`. All authorization is enforced by RLS, not by the
 browser. CVs are stored in the private `cvs` Storage bucket created by the migration.
 
+### Applying migrations from GitHub (optional)
+
+The repository includes a manual **`supabase-migrate`** workflow. To use it instead of the SQL
+editor:
+
+1. In Supabase go to **Project Settings → Database → Connection string → Session pooler (URI)**
+   and copy the URI (it contains the database password).
+2. In GitHub → **Settings → Secrets and variables → Actions → New repository secret**, add:
+   - `SUPABASE_DB_URL` = that pooler URI
+3. Open **Actions → supabase-migrate → Run workflow**, type `MIGRATE`, and run it.
+
+Do not run this workflow if you already applied the SQL manually — the objects already exist.
+
 ## 4. Custom domain
 
 **Vercel → your project → Settings → Domains → Add**. Enter the domain, then create the DNS
