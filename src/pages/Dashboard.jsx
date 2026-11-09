@@ -115,8 +115,8 @@ export default function Dashboard() {
                 <Icon name="plus" size={15} /> {t('Post a Job')}
               </button>
             ) : (
-              <Link className="btn btn--primary btn--sm" to="/signup?role=worker">
-                <Icon name="upload" size={15} /> {t('Upload CV / résumé')}
+              <Link className="btn btn--primary btn--sm" to="/dashboard/worker?tab=profile">
+                <Icon name="file" size={15} /> {t('CVs and certificates')}
               </Link>
             )}
           </div>

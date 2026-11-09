@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../components/Logo';
 import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
@@ -49,7 +49,7 @@ const errorCopy = {
 };
 
 export default function AuthPage() {
-  const { t, signIn, signUp, showToast, authConfigured } = useApp();
+  const { t, user, signIn, signUp, showToast, authConfigured } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -73,6 +73,16 @@ export default function AuthPage() {
     requestedNext && requestedNext.startsWith('/') && !requestedNext.startsWith('//')
       ? requestedNext
       : null;
+
+  // Never show sign-in/sign-up to someone who is already signed in.
+  if (user) {
+    return (
+      <Navigate
+        to={nextUrl || (user.role === 'admin' ? '/admin' : `/dashboard/${user.role}`)}
+        replace
+      />
+    );
+  }
 
   const set = (key) => (e) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }));
