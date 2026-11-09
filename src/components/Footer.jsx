@@ -11,12 +11,12 @@ export default function Footer() {
   const year = new Date().getFullYear();
 
   const socials = [
-    { key: 'facebook', label: 'Facebook', icon: 'facebook' },
-    { key: 'x', label: 'X', icon: 'x' },
-    { key: 'instagram', label: 'Instagram', icon: 'instagram' },
-    { key: 'tiktok', label: 'TikTok', icon: 'tiktok' },
-    { key: 'linkedin', label: 'LinkedIn', icon: 'linkedin' },
-    { key: 'youtube', label: 'YouTube', icon: 'youtube' },
+    { key: 'facebook', label: 'Facebook', image: '/images/social/facebook.png' },
+    { key: 'x', label: 'X', image: '/images/social/x.png' },
+    { key: 'instagram', label: 'Instagram', image: '/images/social/instagram.png' },
+    { key: 'tiktok', label: 'TikTok', image: '/images/social/tiktok.png' },
+    { key: 'linkedin', label: 'LinkedIn', image: '/images/social/linkedin.png' },
+    { key: 'youtube', label: 'YouTube', image: '/images/social/youtube.png' },
   ];
 
   return (
@@ -61,14 +61,15 @@ export default function Footer() {
               {socials.map((social) => {
                 const href = site.social[social.key];
                 const content = (
-                  <>
-                    <Icon
-                      name={social.icon}
-                      size={16}
-                      style={social.key === 'tiktok' ? { width: 18, height: 18 } : undefined}
-                    />
-                    <span className="footer__social-label">{social.label}</span>
-                  </>
+                  <img
+                    className="social-icon"
+                    src={social.image}
+                    alt=""
+                    width="20"
+                    height="20"
+                    loading="lazy"
+                    decoding="async"
+                  />
                 );
                 return href ? (
                   <a

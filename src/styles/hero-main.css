@@ -15,17 +15,24 @@
   height: 27px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid #fff;
   border-radius: 50%;
+  background: #fff;
   color: #fff;
-  transition: background 0.2s var(--ease), color 0.2s var(--ease), border-color 0.2s var(--ease),
+  transition: background 0.2s var(--ease), border-color 0.2s var(--ease),
     transform 0.2s var(--ease);
+}
+
+.topbar__social img {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+  display: block;
 }
 
 .topbar__social:hover {
   background: var(--gold);
   border-color: var(--gold);
-  color: #1b070d;
   transform: translateY(-2px);
 }
 
@@ -35,9 +42,8 @@
 }
 
 .topbar__social.is-pending:hover {
-  background: transparent;
-  border-color: rgba(255, 255, 255, 0.28);
-  color: #fff;
+  background: #fff;
+  border-color: #fff;
   transform: none;
 }
 
@@ -51,9 +57,9 @@
     height: 25px;
   }
 
-  .topbar__socials .icon {
-    width: 12px;
-    height: 12px;
+  .topbar__socials .social-icon {
+    width: 14px;
+    height: 14px;
   }
 }
 

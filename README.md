@@ -292,6 +292,9 @@ component inherits them), `--navy`/`--navy-900` the near-black plum used for dar
 - Logo: the Golden Glow circular badge supplied by the business, cropped and made transparent as
   `public/images/logo-mark.png` (used in the header, footer, mobile menu and favicon).
 - Client logos: supplied by the business as `public/images/clients/*.png`.
+- Social brand icons: Flaticon PNGs supplied by the business as
+  `public/images/social/*.png`. Flaticon's free licence requires attribution unless the business
+  holds a premium licence — confirm before launch.
 - Team photos: supplied by the business as `public/images/team-*.jpg`.
 - Licence documents: supplied by the business as `public/images/licences/*.jpg` (identity numbers redacted).
 

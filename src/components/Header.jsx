@@ -8,12 +8,12 @@ import { industries, industryName } from '../data/industries';
 
 /** Social platforms shown in the top information bar. */
 const socials = [
-  { key: 'facebook', label: 'Facebook', icon: 'facebook' },
-  { key: 'x', label: 'X', icon: 'x' },
-  { key: 'instagram', label: 'Instagram', icon: 'instagram' },
-  { key: 'tiktok', label: 'TikTok', icon: 'tiktok' },
-  { key: 'linkedin', label: 'LinkedIn', icon: 'linkedin' },
-  { key: 'youtube', label: 'YouTube', icon: 'youtube' },
+  { key: 'facebook', label: 'Facebook', image: '/images/social/facebook.png' },
+  { key: 'x', label: 'X', image: '/images/social/x.png' },
+  { key: 'instagram', label: 'Instagram', image: '/images/social/instagram.png' },
+  { key: 'tiktok', label: 'TikTok', image: '/images/social/tiktok.png' },
+  { key: 'linkedin', label: 'LinkedIn', image: '/images/social/linkedin.png' },
+  { key: 'youtube', label: 'YouTube', image: '/images/social/youtube.png' },
 ];
 
 export default function Header() {
@@ -172,11 +172,15 @@ export default function Header() {
                       aria-label={social.label}
                       title={social.label}
                     >
-                      <Icon
-                      name={social.icon}
-                      size={13}
-                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
-                    />
+                      <img
+                        className="social-icon"
+                        src={social.image}
+                        alt=""
+                        width="15"
+                        height="15"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     </a>
                   ) : (
                     <span
@@ -185,11 +189,15 @@ export default function Header() {
                       aria-label={`${social.label} — ${t('link coming soon')}`}
                       title={`${social.label} — ${t('link coming soon')}`}
                     >
-                      <Icon
-                      name={social.icon}
-                      size={13}
-                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
-                    />
+                      <img
+                        className="social-icon"
+                        src={social.image}
+                        alt=""
+                        width="15"
+                        height="15"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     </span>
                   );
                 })}
@@ -471,10 +479,14 @@ export default function Header() {
                     rel="noreferrer noopener"
                     aria-label={social.label}
                   >
-                    <Icon
-                      name={social.icon}
-                      size={13}
-                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
+                    <img
+                      className="social-icon"
+                      src={social.image}
+                      alt=""
+                      width="15"
+                      height="15"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </a>
                 ) : (
@@ -484,10 +496,14 @@ export default function Header() {
                     aria-label={`${social.label} — ${t('link coming soon')}`}
                     title={`${social.label} — ${t('link coming soon')}`}
                   >
-                    <Icon
-                      name={social.icon}
-                      size={13}
-                      style={social.key === 'tiktok' ? { width: 15, height: 15 } : undefined}
+                    <img
+                      className="social-icon"
+                      src={social.image}
+                      alt=""
+                      width="15"
+                      height="15"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </span>
                 );
