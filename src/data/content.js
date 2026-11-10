@@ -6,7 +6,7 @@ export const slides = [
     image: '/images/hero/construction.jpg',
     alt: 'Construction worker in a yellow safety helmet and orange reflective vest',
     industry: { en: 'Construction & Infrastructure', ar: 'البناء والبنية التحتية' },
-    title: { en: 'Building Saudi Arabia, One Skilled Worker at a Time.', ar: 'نبني السعودية بعامل ماهر في كل خطوة.' },
+    title: { en: 'Building Qatar, One Skilled Worker at a Time.', ar: 'نبني قطر بعامل ماهر في كل خطوة.' },
     text: {
       en: 'Site-ready crews for contractors and developers, from helpers to finishing teams.',
       ar: 'فرق جاهزة للمواقع تعمل مع المقاولين والمطورين، من العمال إلى فرق التشطيب.',
