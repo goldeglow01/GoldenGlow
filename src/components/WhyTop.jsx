@@ -9,9 +9,10 @@ const figures = [
   { value: 50, suffix: '+', label: 'Workers Per Month Target' },
 ];
 
-/* Saudi Arabia is the origin hub; every link is drawn from Riyadh. */
-const ORIGIN = { lat: 24.71, lon: 46.68 };
+/* Doha is the origin hub; every link is drawn from the head office in Qatar. */
+const ORIGIN = { lat: 25.29, lon: 51.53 };
 const NETWORK = [
+  { lat: 24.71, lon: 46.68 }, // Riyadh
   { lat: 28.61, lon: 77.2 }, // Delhi
   { lat: 24.86, lon: 67.0 }, // Karachi
   { lat: 23.81, lon: 90.41 }, // Dhaka
@@ -23,7 +24,7 @@ const NETWORK = [
 ];
 
 /* The globe backdrop is an equirectangular map showing 180° of longitude,
-   centred on Riyadh, so lat/lon map linearly onto the circle. */
+   centred on Doha, so lat/lon map linearly onto the circle. */
 const project = ({ lat, lon }) => ({
   x: 50 + (lon - ORIGIN.lon) * (100 / 180),
   y: 50 - lat * (100 / 180),
@@ -44,7 +45,7 @@ export default function WhyTop() {
       <div className="container why-top__grid">
         <Reveal>
           <span className="eyebrow">{t('Trusted Workforce Partner')}</span>
-          <h2 className="h2">{t('Why GoldenGlow is #1 in Saudi Arabia')}</h2>
+          <h2 className="h2">{t('Why GoldenGlow is a Trusted Workforce Partner in Qatar')}</h2>
 
           <div className="bigstats">
             {figures.map((figure) => (
@@ -136,7 +137,7 @@ export default function WhyTop() {
           </div>
           <div className="globe-card" style={{ position: 'relative', margin: '-22px auto 0', width: 'fit-content' }}>
             <Icon name="pin" size={15} />
-            {t('Riyadh, Saudi Arabia')}
+            {t('Doha, Qatar')}
             <span className="legend-dot" style={{ width: 6, height: 6 }} />
           </div>
         </Reveal>

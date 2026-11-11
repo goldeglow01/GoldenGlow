@@ -220,7 +220,7 @@ function EmployerPanels({
   const [errors, setErrors] = useState({});
   const [companies, setCompanies] = useState({
     company: user?.company || displayName || '',
-    city: user?.city || 'Riyadh',
+    city: user?.city || 'Doha',
     industry: user?.industry || industries[0].slug,
     about: user?.about || '',
     website: user?.website || '',
@@ -350,7 +350,7 @@ function EmployerPanels({
               </select>
             </div>
             <div className="field">
-              <label htmlFor="p-salary">{t('Salary')} (SAR / month)</label>
+              <label htmlFor="p-salary">{t('Salary')} (QAR / month)</label>
               <input id="p-salary" className="input" value={form.salary} onChange={set('salary')} inputMode="numeric" placeholder={t('Salary not disclosed')} />
             </div>
             <div className="field full">
@@ -679,7 +679,7 @@ function WorkerPanels({
   const [profile, setProfile] = useState({
     name: user?.name || displayName,
     trade: user?.trade || '',
-    city: user?.city || 'Riyadh',
+    city: user?.city || 'Doha',
     experience: user?.experience || '1–2 years',
     phone: user?.phone || '',
     bio: user?.bio || '',

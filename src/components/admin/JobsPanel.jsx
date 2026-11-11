@@ -123,11 +123,11 @@ export default function JobsPanel({ data }) {
               </select>
             </div>
             <div className="field">
-              <label htmlFor="job-min">Salary from (SAR)</label>
+              <label htmlFor="job-min">Salary from (QAR)</label>
               <input id="job-min" className="input" inputMode="numeric" value={form.salaryMin} onChange={set('salaryMin')} placeholder="Optional" />
             </div>
             <div className="field">
-              <label htmlFor="job-max">Salary to (SAR)</label>
+              <label htmlFor="job-max">Salary to (QAR)</label>
               <input id="job-max" className="input" inputMode="numeric" value={form.salaryMax} onChange={set('salaryMax')} placeholder="Optional" />
             </div>
             <div className="field full">

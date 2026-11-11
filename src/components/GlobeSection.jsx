@@ -5,8 +5,9 @@ import Icon from './Icon';
 import { useApp } from '../context/AppContext';
 import { globePhrases } from '../data/content';
 
-const RIYADH = { lat: 24.71, lon: 46.68, label: 'Riyadh' };
+const DOHA = { lat: 25.29, lon: 51.53, label: 'Doha' };
 const HUBS = [
+  { lat: 24.71, lon: 46.68 }, // Riyadh
   { lat: 28.61, lon: 77.2 }, // Delhi
   { lat: 24.86, lon: 67.0 }, // Karachi
   { lat: 23.81, lon: 90.41 }, // Dhaka
@@ -129,11 +130,11 @@ export default function GlobeSection() {
       shininess: 14,
     });
     const earth = new THREE.Mesh(earthGeometry, material);
-    // Fixed orientation: the globe does not spin. Riyadh is rotated to face the
-    // camera so the gold marker always sits on Saudi Arabia.
-    const riyadhVector = latLonToVector3(RIYADH.lat, RIYADH.lon, 1);
+    // Fixed orientation: the globe does not spin. Doha is rotated to face the
+    // camera so the gold marker always sits on Qatar.
+    const dohaVector = latLonToVector3(DOHA.lat, DOHA.lon, 1);
     // + PI turns the point toward the camera (+Z) rather than away from it.
-    const facing = Math.atan2(-riyadhVector.z, riyadhVector.x) + Math.PI;
+    const facing = Math.atan2(-dohaVector.z, dohaVector.x) + Math.PI;
     earth.rotation.y = facing;
     pivot.add(earth);
 
@@ -186,12 +187,12 @@ export default function GlobeSection() {
     // Child of the earth so the graticule rotates with the continents.
     earth.add(new THREE.Mesh(gridGeometry, gridMaterial));
 
-    // Connection arcs from Riyadh to international hubs
+    // Connection arcs from Doha to international hubs
     const arcs = [];
     const arcGroup = new THREE.Group();
     arcGroup.rotation.y = facing;
     pivot.add(arcGroup);
-    const start = latLonToVector3(RIYADH.lat, RIYADH.lon, 1.008);
+    const start = latLonToVector3(DOHA.lat, DOHA.lon, 1.008);
 
     HUBS.forEach((hub, i) => {
       const end = latLonToVector3(hub.lat, hub.lon, 1.008);
@@ -237,8 +238,8 @@ export default function GlobeSection() {
       arcGroup.add(glow);
     });
 
-    // Highlighted Riyadh hub
-    const riyadhGlow = new THREE.Sprite(
+    // Highlighted Doha hub
+    const dohaGlow = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: makeGlowTexture(),
         color: 0xf5b82e,
@@ -248,16 +249,16 @@ export default function GlobeSection() {
         depthWrite: false,
       })
     );
-    riyadhGlow.position.copy(start);
-    riyadhGlow.scale.setScalar(0.16);
-    arcGroup.add(riyadhGlow);
+    dohaGlow.position.copy(start);
+    dohaGlow.scale.setScalar(0.16);
+    arcGroup.add(dohaGlow);
 
-    const riyadhDot = new THREE.Mesh(
+    const dohaDot = new THREE.Mesh(
       new THREE.SphereGeometry(0.016, 12, 12),
       new THREE.MeshBasicMaterial({ color: 0xffd978 })
     );
-    riyadhDot.position.copy(start);
-    arcGroup.add(riyadhDot);
+    dohaDot.position.copy(start);
+    arcGroup.add(dohaDot);
 
     // Lighting
     scene.add(new THREE.AmbientLight(0x94a9c9, 0.85));
@@ -294,8 +295,8 @@ export default function GlobeSection() {
     const renderFrame = () => {
       const elapsed = clock.getElapsedTime();
       if (!reduceMotion) {
-        riyadhGlow.scale.setScalar(0.15 + Math.sin(elapsed * 1.6) * 0.015);
-        riyadhDot.scale.setScalar(1 + Math.sin(elapsed * 1.6) * 0.15);
+        dohaGlow.scale.setScalar(0.15 + Math.sin(elapsed * 1.6) * 0.015);
+        dohaDot.scale.setScalar(1 + Math.sin(elapsed * 1.6) * 0.15);
       }
       renderer.render(scene, camera);
       if (!reduceMotion && inView && !document.hidden) {
@@ -394,7 +395,7 @@ export default function GlobeSection() {
 
           <p className="globe-sub">
             {t(
-              'From local projects in Saudi Arabia to international workforce connections, GoldenGlow brings businesses and talent closer together.'
+              'From projects across Qatar to international workforce connections, GoldenGlow brings businesses and talent closer together.'
             )}
           </p>
 
@@ -411,7 +412,7 @@ export default function GlobeSection() {
 
           <div className="globe-legend">
             <span>
-              <span className="legend-dot" /> {t('Riyadh, Saudi Arabia')}
+              <span className="legend-dot" /> {t('Doha, Qatar')}
             </span>
             <span>
               <span className="legend-dot legend-dot--blue" /> {t('Talent sourcing')}

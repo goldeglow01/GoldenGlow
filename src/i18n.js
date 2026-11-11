@@ -13,7 +13,17 @@ export const ar = {
   'Quick Links': 'روابط سريعة',
   Team: 'الفريق',
   Contact: 'اتصل بنا',
+  Qatar: 'قطر',
   'Saudi Arabia': 'السعودية',
+  Doha: 'الدوحة',
+  'Al Rayyan': 'الريان',
+  Lusail: 'لوسيل',
+  'Al Wakrah': 'الوكرة',
+  'Al Khor': 'الخور',
+  Mesaieed: 'مسيعيد',
+  'Umm Salal': 'أم صلال',
+  'Al Daayen': 'الضعاين',
+  Dukhan: 'دخان',
   'Sign In': 'تسجيل الدخول',
   'Sign Up': 'إنشاء حساب',
   'Post a Job': 'أعلن عن وظيفة',
@@ -49,14 +59,14 @@ export const ar = {
   // Hero
   'Connecting Great Talent With Great Opportunities.':
     'نربط أفضل المواهب بأفضل الفرص.',
-  'GoldenGlow connects Saudi businesses with dependable workers across construction, maintenance, technical services, hospitality, logistics, and many other industries. Find the right people for every project, or discover your next career opportunity.':
-    'تربط جولدن جلو الشركات السعودية بعمالة موثوقة في البناء والصيانة والخدمات الفنية والضيافة واللوجستيات وقطاعات أخرى عديدة. اعثر على الأشخاص المناسبين لكل مشروع، أو اكتشف فرصتك المهنية القادمة.',
+  'GoldenGlow is a Doha-based workforce partner connecting Qatar businesses with dependable workers across construction, maintenance, technical services, hospitality, logistics, and many other industries. Find the right people for every project, or discover your next career opportunity.':
+    'جولدن جلو شريك قوى عاملة مقرّه الدوحة، يربط الشركات القطرية بعمالة موثوقة في البناء والصيانة والخدمات الفنية والضيافة واللوجستيات وقطاعات أخرى عديدة. اعثر على الأشخاص المناسبين لكل مشروع، أو اكتشف فرصتك المهنية القادمة.',
   'Trusted Workforce Solutions': 'حلول قوى عاملة موثوقة',
   'Skilled Talent': 'مواهب ماهرة',
   'Reliable Manpower': 'قوى عاملة يمكن الاعتماد عليها',
   'Job Title': 'المسمى الوظيفي',
   'Job Industry': 'القطاع',
-  'City in Saudi Arabia': 'المدينة في السعودية',
+  'City in Qatar': 'المدينة في قطر',
   'Select Title': 'اختر المسمى',
   'Select Industry': 'اختر القطاع',
   'Select City': 'اختر المدينة',
@@ -69,7 +79,7 @@ export const ar = {
   'Post Your Job': 'أعلن عن وظيفتك',
   'Trusted Workforce Solutions | Skilled Talent | Reliable Manpower':
     'حلول قوى عاملة موثوقة | مواهب ماهرة | عمالة يمكن الاعتماد عليها',
-  'Hiring in Saudi Arabia?': 'توظّف في السعودية؟',
+  'Hiring in Qatar?': 'توظّف في قطر؟',
   'Submit Manpower Requirement': 'أرسل احتياجك من القوى العاملة',
   'Log In': 'تسجيل الدخول',
   'Pause slideshow': 'إيقاف العرض',
@@ -81,16 +91,17 @@ export const ar = {
   // Stats / why #1
   'Connecting Businesses and Workers Through Reliable Workforce Solutions.':
     'نربط الشركات والعاملين عبر حلول قوى عاملة موثوقة.',
-  'Why GoldenGlow is #1 in Saudi Arabia': 'لماذا جولدن جلو الأولى في السعودية',
+  'Why GoldenGlow is a Trusted Workforce Partner in Qatar':
+    'لماذا جولدن جلو شريك موثوق للقوى العاملة في قطر',
   'Years Experience': 'سنوات الخبرة',
   'Countries Served': 'دول مخدومة',
   'Workers Per Month Target': 'هدف العمال شهريًا',
   'Skilled Workforce': 'قوى عاملة ماهرة',
   'Multiple Industries Served': 'قطاعات متعددة',
-  'Saudi Arabia Coverage': 'تغطية السعودية',
+  'Qatar Coverage': 'تغطية قطر',
   'Employer-Focused Solutions': 'حلول تركز على صاحب العمل',
   'Industries covered': 'قطاعًا مشمولًا',
-  'Saudi cities covered': 'مدينة سعودية مشمولة',
+  'Qatar cities covered': 'مدينة قطرية مشمولة',
   'Companies we work with': 'شركات نعمل معها',
   'Skilled workforce': 'قوى عاملة ماهرة',
   'Years of experience': 'سنوات من الخبرة',
@@ -117,7 +128,7 @@ export const ar = {
 
   // About
   'About GoldenGlow': 'عن جولدن جلو',
-  'Your Workforce Partner in Saudi Arabia.': 'شريكك في القوى العاملة داخل السعودية.',
+  'Your Workforce Partner in Qatar.': 'شريكك في القوى العاملة في قطر.',
   'GoldenGlow is designed to connect employers with suitable talent across a broad range of industries. Our goal is to make workforce discovery simpler, improve access to opportunities, and help businesses find the right people for their operational needs.':
     'صُممت جولدن جلو لربط أصحاب العمل بالمواهب المناسبة عبر مجموعة واسعة من القطاعات. هدفنا تبسيط الوصول إلى القوى العاملة، وتوسيع فرص العمل، ومساعدة الشركات على إيجاد الأشخاص المناسبين لاحتياجاتها التشغيلية.',
   'Workforce Matching': 'مطابقة القوى العاملة',
@@ -136,14 +147,14 @@ export const ar = {
   'From single roles to complete site teams, GoldenGlow helps employers describe requirements clearly and review suitable candidates.':
     'من وظيفة واحدة إلى فرق كاملة للموقع، تساعد جولدن جلو أصحاب العمل على توضيح المتطلبات ومراجعة المرشحين المناسبين.',
   'Request Workforce': 'اطلب قوى عاملة',
-  'Have a Project in Saudi Arabia?': 'لديك مشروع في السعودية؟',
+  'Have a Project in Qatar?': 'لديك مشروع في قطر؟',
   'Tell us what workforce you need, and our team can review your requirements.':
     'أخبرنا ما تحتاجه من قوى عاملة، ويمكن لفريقنا مراجعة متطلباتك.',
   'Submit Your Manpower Requirement': 'أرسل احتياجك من القوى العاملة',
 
   // Jobs
   'Find Your Career': 'اعثر على مسارك المهني',
-  'Explore Opportunities Across Saudi Arabia.': 'استكشف الفرص في جميع أنحاء السعودية.',
+  'Explore Opportunities Across Qatar.': 'استكشف الفرص في جميع أنحاء قطر.',
   'Search by job title, company or keyword': 'ابحث بالمسمى الوظيفي أو الشركة أو كلمة مفتاحية',
   'Search': 'بحث',
   'City': 'المدينة',
@@ -154,6 +165,9 @@ export const ar = {
   'Employment type': 'نوع التوظيف',
   'All types': 'كل الأنواع',
   'Salary range': 'نطاق الراتب',
+  'Under QAR 2,000': 'أقل من 2,000 ر.ق',
+  'QAR 2,000 – 3,500': '2,000 – 3,500 ر.ق',
+  'QAR 3,500+': 'أكثر من 3,500 ر.ق',
   'Any salary': 'أي راتب',
   'Sort by': 'ترتيب حسب',
   Newest: 'الأحدث',
@@ -201,9 +215,11 @@ export const ar = {
   // Countries
   'Global Reach': 'وصول عالمي',
   'Connecting Talent Across Borders.': 'نربط المواهب عبر الحدود.',
-  'GoldenGlow is intended to support workforce connections involving Saudi Arabia and other countries, subject to applicable laws, employer requirements, and recruitment permissions.':
-    'تهدف جولدن جلو إلى دعم روابط القوى العاملة بين السعودية ودول أخرى، وفقًا للأنظمة المعمول بها ومتطلبات أصحاب العمل وتصاريح الاستقدام.',
+  'GoldenGlow is a Doha-based workforce partner supporting connections between Qatar and talent markets abroad, subject to applicable laws, employer requirements, and recruitment permissions.':
+    'جولدن جلو شريك قوى عاملة مقرّه الدوحة، يدعم روابط القوى العاملة بين قطر وأسواق المواهب في الخارج، وفقًا للأنظمة المعمول بها ومتطلبات أصحاب العمل وتصاريح الاستقدام.',
   'Primary market': 'السوق الرئيسي',
+  'Head office & primary market': 'المقر الرئيسي والسوق الرئيسي',
+  'Employer market': 'سوق أصحاب العمل',
   'Talent sourcing': 'استقطاب المواهب',
   'Country list is editable and does not imply licensed operations or offices in every country.':
     'قائمة الدول قابلة للتعديل ولا تعني وجود تراخيص أو مكاتب في كل دولة.',
@@ -233,11 +249,11 @@ export const ar = {
   'Global Workforce': 'قوى عاملة عالمية',
   'Connecting Talent. Powering Opportunities. Across the World.':
     'نربط المواهب. نصنع الفرص. حول العالم.',
-  'From local projects in Saudi Arabia to international workforce connections, GoldenGlow brings businesses and talent closer together.':
-    'من المشاريع المحلية في السعودية إلى روابط القوى العاملة الدولية، تقرّب جولدن جلو الشركات من المواهب.',
+  'From projects across Qatar to international workforce connections, GoldenGlow brings businesses and talent closer together.':
+    'من المشاريع في أنحاء قطر إلى روابط القوى العاملة الدولية، تقرّب جولدن جلو الشركات من المواهب.',
   'Hire Skilled Workers': 'وظّف عمالًا ماهرين',
   'Explore Job Opportunities': 'استكشف فرص العمل',
-  'Riyadh, Saudi Arabia': 'الرياض، السعودية',
+  'Doha, Qatar': 'الدوحة، قطر',
   'Interactive globe': 'كرة أرضية تفاعلية',
 
   // Team
@@ -284,7 +300,7 @@ export const ar = {
   'Tell us about your project, the roles you need, or the job you are looking for. Our team is available 24/7.':
     'أخبرنا عن مشروعك أو الوظائف التي تحتاجها أو الوظيفة التي تبحث عنها. فريقنا متاح على مدار الساعة.',
   'Official email': 'البريد الرسمي',
-  'Saudi phone': 'الهاتف السعودي',
+  'Qatar phone': 'الهاتف القطري',
   'Office address': 'عنوان المكتب',
   'Business hours': 'ساعات العمل',
   'Open 24/7': 'مفتوح ٢٤ ساعة طوال الأسبوع',
@@ -354,7 +370,7 @@ export const ar = {
   'Enter a valid phone number': 'أدخل رقم هاتف صحيحًا',
   'Enter a whole number of workers': 'أدخل عددًا صحيحًا من العمال',
   'Please enter at least 20 characters.': 'يرجى إدخال 20 حرفًا على الأقل.',
-  'Saudi phone not configured': 'الهاتف السعودي غير مُعد',
+  'Qatar phone not configured': 'الهاتف القطري غير مُعد',
 
   // Footer
   'Company': 'الشركة',
@@ -369,14 +385,14 @@ export const ar = {
   'Newsletter signup is disabled until an email service is connected.':
     'الاشتراك في النشرة معطل حتى ربط خدمة بريد.',
   'All rights reserved.': 'جميع الحقوق محفوظة.',
-  'GoldenGlow connects employers in Saudi Arabia with suitable talent across construction, technical services, hospitality, logistics and more.':
-    'تربط جولدن جلو أصحاب العمل في السعودية بالمواهب المناسبة في البناء والخدمات الفنية والضيافة واللوجستيات وغيرها.',
+  'GoldenGlow is a Doha-based workforce partner connecting employers in Qatar with suitable talent across construction, technical services, hospitality, logistics and more.':
+    'جولدن جلو شريك قوى عاملة مقرّه الدوحة، يربط أصحاب العمل في قطر بالمواهب المناسبة في البناء والخدمات الفنية والضيافة واللوجستيات وغيرها.',
   'Social media links will appear here once official accounts are added.':
     'ستظهر روابط التواصل الاجتماعي هنا بعد إضافة الحسابات الرسمية.',
   'Stock photography used for illustration. Replace with your own project photography.':
     'صور توضيحية من مكتبات الصور. استبدلها بصور مشاريعك الخاصة.',
-  'Workforce recruitment for Saudi Arabia. Recruitment services are subject to licensing and labour law in each country where we operate.':
-    'توظيف القوى العاملة في السعودية. خدمات التوظيف تخضع للتراخيص وقوانين العمل في كل دولة نعمل فيها.',
+  'Workforce recruitment from our Doha office in Qatar. Recruitment services are subject to licensing and labour law in each country where we operate.':
+    'توظيف القوى العاملة من مكتبنا في الدوحة، قطر. خدمات التوظيف تخضع للتراخيص وقوانين العمل في كل دولة نعمل فيها.',
 
   // Auth / dashboard
   'Welcome back': 'مرحبًا بعودتك',
@@ -427,9 +443,9 @@ export const ar = {
   'Documented recruitment steps': 'خطوات توظيف موثّقة',
   'One contact from enquiry to shortlist': 'جهة تواصل واحدة من الاستفسار إلى القائمة المختصرة',
   'Find work that fits your skills.': 'اعثر على عمل يناسب مهاراتك.',
-  'Create a profile with your trade and experience, apply to vacancies in Saudi Arabia, and follow the status of every application you send.':
-    'أنشئ ملفًا بمهنتك وخبرتك، وتقدّم على الوظائف في السعودية، وتابع حالة كل طلب ترسله.',
-  'Apply to roles across Saudi Arabia': 'تقدّم على وظائف في أنحاء السعودية',
+  'Create a profile with your trade and experience, apply to vacancies across Qatar, and follow the status of every application you send.':
+    'أنشئ ملفًا بمهنتك وخبرتك، وتقدّم على الوظائف في قطر، وتابع حالة كل طلب ترسله.',
+  'Apply to roles across Qatar': 'تقدّم على وظائف في أنحاء قطر',
   'Keep your CV and certificates together': 'احفظ سيرتك وشهاداتك في مكان واحد',
   'Track each application in one place': 'تابع كل طلب في مكان واحد',
   'Dashboard': 'لوحة التحكم',
@@ -564,7 +580,7 @@ export const ar = {
   'Next step': 'الخطوة التالية',
   'Email me jobs like this': 'أرسل لي وظائف مشابهة',
   Watching: 'متابعة',
-  'Watching all vacancies across Saudi Arabia': 'متابعة جميع الوظائف في السعودية',
+  'Watching all vacancies across Qatar': 'متابعة جميع الوظائف في قطر',
   'Save this search': 'احفظ هذا البحث',
   'Search saved. Our team can send matching vacancies to that address.':
     'تم حفظ البحث. يمكن لفريقنا إرسال الوظائف المطابقة إلى ذلك العنوان.',

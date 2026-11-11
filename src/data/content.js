@@ -80,7 +80,7 @@ export const clients = [
 
 export const stats = [
   { value: 20, suffix: '+', label: { en: 'Industries covered', ar: 'قطاعًا مشمولًا' } },
-  { value: 9, suffix: '', label: { en: 'Saudi cities covered', ar: 'مدينة سعودية مشمولة' } },
+  { value: 9, suffix: '', label: { en: 'Qatar cities covered', ar: 'مدينة قطرية مشمولة' } },
   { value: 50, suffix: '+', label: { en: 'Skilled workforce', ar: 'قوى عاملة ماهرة' } },
   { value: 2, suffix: '+', label: { en: 'Years of experience', ar: 'سنوات من الخبرة' } },
 ];
@@ -129,7 +129,19 @@ export const employerServices = [
 ];
 
 export const countries = [
-  { code: 'sa', name: 'Saudi Arabia', ar: 'السعودية', note: { en: 'Primary market', ar: 'السوق الرئيسي' } },
+  {
+    code: 'qa',
+    flag: '/flags/qa.png',
+    name: 'Qatar',
+    ar: 'قطر',
+    note: { en: 'Head office & primary market', ar: 'المقر الرئيسي والسوق الرئيسي' },
+  },
+  {
+    code: 'sa',
+    name: 'Saudi Arabia',
+    ar: 'السعودية',
+    note: { en: 'Employer market', ar: 'سوق أصحاب العمل' },
+  },
   { code: 'in', name: 'India', ar: 'الهند', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
   { code: 'pk', name: 'Pakistan', ar: 'باكستان', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
   { code: 'bd', name: 'Bangladesh', ar: 'بنغلاديش', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
@@ -178,8 +190,8 @@ export const journeys = {
       title: { en: 'Register Your Profile', ar: 'سجّل ملفك' },
       text: { en: 'Create a worker profile with your trade and location preferences.', ar: 'أنشئ ملفًا يتضمن تخصصك والمدن التي تفضلها.' },
       detail: {
-        en: 'Create an account as a worker, choose your trade and the Saudi cities you would accept, and keep your contact number current so employers can reach you.',
-        ar: 'أنشئ حسابًا كعامل، وحدد تخصصك والمدن السعودية التي تقبل العمل فيها، وحدّث رقم تواصلك ليتمكن أصحاب العمل من الوصول إليك.',
+        en: 'Create an account as a worker, choose your trade and the Qatar cities you would accept, and keep your contact number current so employers can reach you.',
+        ar: 'أنشئ حسابًا كعامل، وحدد تخصصك والمدن القطرية التي تقبل العمل فيها، وحدّث رقم تواصلك ليتمكن أصحاب العمل من الوصول إليك.',
       },
       outcome: { en: 'A profile that appears when you apply.', ar: 'ملف يظهر عند تقديمك على الوظائف.' },
     },
@@ -255,16 +267,6 @@ export const team = [
       ar: 'يدير عتيق العمليات اليومية، وهي الجزء الذي يحدد نجاح التوظيف. يحافظ على ثبات معايير الفرز بين المهن، ويتحقق من مطابقة الخبرة والشهادات للوظيفة، ويتابع كل قائمة مرشحين حتى المقابلة والعرض والوصول دون توقف. وعندما يكون لدى العامل أو صاحب العمل سؤال بعد المباشرة، يكون فريقه أول نقطة تواصل.',
     },
   },
-  {
-    name: 'Rita Lama',
-    role: { en: 'Marketing Officer', ar: 'مسؤولة التسويق' },
-    photo: '/images/team-rita.jpg',
-    focus: { en: 'Employer communication & job visibility', ar: 'التواصل مع أصحاب العمل وإبراز الوظائف' },
-    bio: {
-      en: 'Rita makes sure the right people see the roles we handle. She writes the vacancy listings so that duties, location, accommodation and pay are clear from the start, publishes them where candidates in each trade actually look, and keeps employers updated with plain-language reports on how a campaign is performing. She also reviews the website and enquiry channels every week so that no message from a worker or a company goes unanswered.',
-      ar: 'تضمن ريتا أن يرى الأشخاص المناسبون الوظائف التي نعمل عليها. تكتب إعلانات الوظائف بحيث تكون المهام والموقع والسكن والأجر واضحة من البداية، وتنشرها حيث يبحث المرشحون فعلاً في كل مهنة، وتوافد أصحاب العمل بتقارير بسيطة عن سير الحملة. كما تراجع الموقع وقنوات الاستفسار أسبوعياً حتى لا يبقى أي رسالة من عامل أو شركة دون رد.',
-    },
-  },
 ];
 
 /**
@@ -312,7 +314,7 @@ export const licences = [
 
 export const globePhrases = [
   { en: 'Connecting Workers Across the World.', ar: 'نربط العمال حول العالم.' },
-  { en: 'Bringing Global Talent to Saudi Arabia.', ar: 'نجلب المواهب العالمية إلى السعودية.' },
+  { en: 'Bringing Global Talent to Doha.', ar: 'نجلب المواهب العالمية إلى الدوحة.' },
   { en: 'Supporting Every Industry With Skilled People.', ar: 'ندعم كل قطاع بأيدٍ ماهرة.' },
   { en: 'Creating Connections Between Employers and Workers.', ar: 'نصنع روابط بين أصحاب العمل والعمال.' },
   { en: 'Workforce Solutions for a Connected World.', ar: 'حلول قوى عاملة لعالم متصل.' },

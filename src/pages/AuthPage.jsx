@@ -28,9 +28,9 @@ const visuals = {
     alt: 'A construction worker in a safety helmet and reflective vest',
     kicker: 'For workers',
     title: 'Find work that fits your skills.',
-    text: 'Create a profile with your trade and experience, apply to vacancies in Saudi Arabia, and follow the status of every application you send.',
+    text: 'Create a profile with your trade and experience, apply to vacancies across Qatar, and follow the status of every application you send.',
     points: [
-      'Apply to roles across Saudi Arabia',
+      'Apply to roles across Qatar',
       'Keep your CV and certificates together',
       'Track each application in one place',
     ],

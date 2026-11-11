@@ -36,7 +36,7 @@ export const industries = [
     ar: 'التكييف والتبريد',
     icon: 'wind',
     tone: 'cyan',
-    desc: 'AC technicians, chiller operators and ducting crews built for Saudi summers.',
+    desc: 'AC technicians, chiller operators and ducting crews built for Qatar summers.',
   },
   {
     slug: 'welding-fabrication',

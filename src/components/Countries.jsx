@@ -15,7 +15,7 @@ export default function Countries() {
             <h2 className="h2">{t('Connecting Talent Across Borders.')}</h2>
             <p className="sub">
               {t(
-                'GoldenGlow is intended to support workforce connections involving Saudi Arabia and other countries, subject to applicable laws, employer requirements, and recruitment permissions.'
+                'GoldenGlow is a Doha-based workforce partner supporting connections between Qatar and talent markets abroad, subject to applicable laws, employer requirements, and recruitment permissions.'
               )}
             </p>
           </Reveal>
@@ -25,7 +25,13 @@ export default function Countries() {
         <div className="country-grid" style={{ marginTop: 30 }}>
           {countries.map((country, i) => (
             <Reveal className="country-card" key={country.code} delay={i * 45}>
-              <img src={`/flags/${country.code}.png`} alt={`${country.name} flag`} width="42" height="30" loading="lazy" />
+              <img
+                src={country.flag || `/flags/${country.code}.png`}
+                alt={`${country.name} flag`}
+                width="42"
+                height="30"
+                loading="lazy"
+              />
               <div>
                 <strong>{t(country.name)}</strong>
                 <small>{t(country.note)}</small>

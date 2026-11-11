@@ -210,7 +210,7 @@ export default function Hero() {
 
           <div className="field">
             <label className="field__label" htmlFor="hero-city">
-              {t('City in Saudi Arabia')}
+              {t('City in Qatar')}
             </label>
             <select
               id="hero-city"

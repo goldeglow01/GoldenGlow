@@ -47,7 +47,7 @@ export default function Home() {
           >
             <div className="section-head" style={{ marginBottom: 0 }}>
               <span className="eyebrow">{t('Find Your Career')}</span>
-              <h2 className="h2">{t('Explore Opportunities Across Saudi Arabia.')}</h2>
+              <h2 className="h2">{t('Explore Opportunities Across Qatar.')}</h2>
               <p className="sub">
                 {t('Filter by role, city, experience and employment type in seconds.')}
               </p>

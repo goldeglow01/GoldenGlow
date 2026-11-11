@@ -251,7 +251,7 @@
 }
 
 /* ============================================================
-   Why #1 in Saudi Arabia
+   Why a trusted workforce partner in Qatar
    ============================================================ */
 .why-top {
   position: relative;
@@ -366,10 +366,10 @@
   border-radius: 50%;
   background-image: url('/textures/earth-map.jpg');
   background-repeat: no-repeat;
-  /* 180° of longitude across the sphere, centred on Riyadh, so the origin dot
+  /* 180° of longitude across the sphere, centred on Doha, so the origin dot
      and the connection arcs land on the right countries. The globe is still. */
   background-size: 200% 100%;
-  background-position: 75.93% center;
+  background-position: 78.63% center;
   box-shadow: inset -34px -22px 70px rgba(34, 7, 17, 0.7), inset 12px 10px 40px rgba(255, 255, 255, 0.18),
     0 36px 70px rgba(122, 27, 69, 0.24);
   border: 1px solid rgba(122, 27, 69, 0.25);
@@ -1419,7 +1419,7 @@
   border-radius: 50%;
   background-image: url('/textures/earth-map.jpg');
   background-size: 200% 100%;
-  background-position: 75.93% center;
+  background-position: 78.63% center;
   background-repeat: no-repeat;
   box-shadow: inset -30px -20px 60px rgba(0, 0, 0, 0.7), 0 0 80px rgba(122, 27, 69, 0.35);
 }

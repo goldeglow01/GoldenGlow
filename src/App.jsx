@@ -64,17 +64,17 @@ function ScrollManager() {
 }
 
 const DEFAULT_DESCRIPTION =
-  'GoldenGlow connects Saudi employers with reliable skilled and unskilled workers across construction, hospitality, logistics and more. Search jobs or request workforce.';
+  'GoldenGlow is a Doha-based workforce partner connecting Qatar employers with reliable skilled and unskilled workers across construction, hospitality, logistics and more. Search jobs or request workforce.';
 
 const routeMeta = {
   '/': {
-    title: 'GoldenGlow | Workforce Recruitment & Manpower Services in Saudi Arabia',
+    title: 'GoldenGlow | Workforce Recruitment & Manpower Services in Qatar',
     description: DEFAULT_DESCRIPTION,
   },
   '/jobs': {
-    title: 'Jobs in Saudi Arabia | GoldenGlow Workforce',
+    title: 'Jobs in Qatar | GoldenGlow Workforce',
     description:
-      'Browse vacancies across Riyadh, Jeddah, Dammam, Makkah, Madinah and NEOM. Filter by industry, city, experience and employment type.',
+      'Browse vacancies across Doha, Al Rayyan, Lusail, Al Wakrah, Al Khor, Mesaieed and Dukhan. Filter by industry, city, experience and employment type.',
   },
   '/team': {
     title: 'Our Team | GoldenGlow Workforce',
@@ -94,7 +94,7 @@ const routeMeta = {
   '/signup': {
     title: 'Create an Account | GoldenGlow Workforce',
     description:
-      'Join GoldenGlow as an employer hiring workers or as a worker looking for opportunities in Saudi Arabia.',
+      'Join GoldenGlow as an employer hiring workers or as a worker looking for opportunities across Qatar.',
     noindex: true,
   },
   '/dashboard': {

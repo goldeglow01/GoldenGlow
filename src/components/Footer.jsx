@@ -27,7 +27,7 @@ export default function Footer() {
             <Logo variant="dark" size={44} />
             <p style={{ marginTop: 16 }}>
               {t(
-                'GoldenGlow connects employers in Saudi Arabia with suitable talent across construction, technical services, hospitality, logistics and more.'
+                'GoldenGlow is a Doha-based workforce partner connecting employers in Qatar with suitable talent across construction, technical services, hospitality, logistics and more.'
               )}
             </p>
             <div className="footer__contact">
@@ -212,7 +212,7 @@ export default function Footer() {
 
         <p className="footer__disclaimer">
           {t(
-            'Workforce recruitment for Saudi Arabia. Recruitment services are subject to licensing and labour law in each country where we operate.'
+            'Workforce recruitment from our Doha office in Qatar. Recruitment services are subject to licensing and labour law in each country where we operate.'
           )}{' '}
           {site.licence.verified ? site.licence.label : ''}
         </p>

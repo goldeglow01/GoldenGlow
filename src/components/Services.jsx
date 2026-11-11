@@ -46,7 +46,7 @@ export default function Services() {
 
         <Reveal className="cta-strip">
           <div>
-            <h3>{t('Have a Project in Saudi Arabia?')}</h3>
+            <h3>{t('Have a Project in Qatar?')}</h3>
             <p>{t('Tell us what workforce you need, and our team can review your requirements.')}</p>
           </div>
           <Link className="btn btn--gold btn--lg" to="/#contact">

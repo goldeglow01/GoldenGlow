@@ -11,9 +11,9 @@ import { db } from '../lib/db';
 
 const salaryBands = [
   { value: 'any', label: 'Any salary' },
-  { value: 'under-2000', label: 'Under SAR 2,000' },
-  { value: '2000-3500', label: 'SAR 2,000 – 3,500' },
-  { value: 'above-3500', label: 'SAR 3,500+' },
+  { value: 'under-2000', label: 'Under QAR 2,000' },
+  { value: '2000-3500', label: 'QAR 2,000 – 3,500' },
+  { value: 'above-3500', label: 'QAR 3,500+' },
 ];
 
 export default function JobsBrowser({ syncUrl = false, limit = 6, compact = false }) {

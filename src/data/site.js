@@ -13,8 +13,8 @@ export const site = {
   since: '2026',
   tagline: { en: 'Workforce & Manpower Solutions', ar: 'حلول القوى العاملة والتوظيف' },
   description: {
-    en: 'GoldenGlow connects Saudi employers with dependable skilled and unskilled workers, and helps workers find real opportunities across the Kingdom.',
-    ar: 'تربط جولدن جلو أصحاب العمل في السعودية بعمالة ماهرة وموثوقة، وتساعد الباحثين عن عمل على الوصول إلى فرص حقيقية في جميع أنحاء المملكة.',
+    en: 'GoldenGlow is a Doha-based workforce partner connecting Qatar employers with dependable skilled and unskilled workers, and helping workers find real opportunities across the country.',
+    ar: 'جولدن جلو شريك قوى عاملة مقرّه الدوحة، يربط أصحاب العمل في قطر بعمالة ماهرة وموثوقة، ويساعد الباحثين عن عمل على الوصول إلى فرص حقيقية في جميع أنحاء البلاد.',
   },
   contact: {
     email: 'info@goldenglowqr.com',
@@ -59,15 +59,15 @@ export const site = {
 };
 
 export const cities = [
-  'Riyadh',
-  'Jeddah',
-  'Dammam',
-  'Al Khobar',
-  'Makkah',
-  'Madinah',
-  'NEOM',
-  'Tabuk',
-  'Abha',
+  'Doha',
+  'Al Rayyan',
+  'Lusail',
+  'Al Wakrah',
+  'Al Khor',
+  'Mesaieed',
+  'Umm Salal',
+  'Al Daayen',
+  'Dukhan',
 ];
 
 export const employmentTypes = ['Full-time', 'Contract', 'Temporary', 'Part-time'];
@@ -102,6 +102,7 @@ export const nav = [
     label: 'Countries',
     to: '/#countries',
     children: [
+      { label: 'Qatar', to: '/#countries' },
       { label: 'Saudi Arabia', to: '/#countries' },
       { label: 'India', to: '/#countries' },
       { label: 'Pakistan', to: '/#countries' },

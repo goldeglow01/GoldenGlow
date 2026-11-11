@@ -43,14 +43,14 @@ export default function About() {
             </span>
             <span>
               <strong>9</strong>
-              <small>{t('Saudi cities covered')}</small>
+              <small>{t('Qatar cities covered')}</small>
             </span>
           </div>
         </Reveal>
 
         <Reveal delay={120}>
           <span className="eyebrow">{t('About GoldenGlow')}</span>
-          <h2 className="h2">{t('Your Workforce Partner in Saudi Arabia.')}</h2>
+          <h2 className="h2">{t('Your Workforce Partner in Qatar.')}</h2>
           <p className="sub">
             {t(
               'GoldenGlow is designed to connect employers with suitable talent across a broad range of industries. Our goal is to make workforce discovery simpler, improve access to opportunities, and help businesses find the right people for their operational needs.'

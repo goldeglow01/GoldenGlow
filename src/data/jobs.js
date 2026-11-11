@@ -11,14 +11,14 @@ export const jobs = [
     id: 'GG-1001',
     title: 'Plumber',
     company: 'Demo Facilities Co.',
-    city: 'Riyadh',
+    city: 'Doha',
     industry: 'plumbing-pipe-fitting',
     type: 'Full-time',
     experience: '3–5 years',
     salary: { min: 1800, max: 2600 },
     posted: '2026-10-24',
     description:
-      'Maintain and repair water supply, drainage and sanitary systems across commercial buildings in Riyadh.',
+      'Maintain and repair water supply, drainage and sanitary systems across commercial buildings in Doha.',
     requirements: [
       'Experience with PVC, PPR and copper pipe systems',
       'Ability to read basic plumbing drawings',
@@ -29,7 +29,7 @@ export const jobs = [
     id: 'GG-1002',
     title: 'Electrician',
     company: 'Demo Contracting Group',
-    city: 'Jeddah',
+    city: 'Lusail',
     industry: 'electrical-technical',
     type: 'Full-time',
     experience: '3–5 years',
@@ -47,7 +47,7 @@ export const jobs = [
     id: 'GG-1003',
     title: 'Construction Helper',
     company: 'Demo Build Contractors',
-    city: 'NEOM',
+    city: 'Mesaieed',
     industry: 'construction-infrastructure',
     type: 'Contract',
     experience: 'Entry level',
@@ -65,7 +65,7 @@ export const jobs = [
     id: 'GG-1004',
     title: 'HVAC Technician',
     company: 'Demo Climate Services',
-    city: 'Dammam',
+    city: 'Al Rayyan',
     industry: 'hvac-air-conditioning',
     type: 'Full-time',
     experience: '3–5 years',
@@ -83,7 +83,7 @@ export const jobs = [
     id: 'GG-1005',
     title: 'Welder',
     company: 'Demo Industrial Works',
-    city: 'Al Khobar',
+    city: 'Mesaieed',
     industry: 'welding-fabrication',
     type: 'Contract',
     experience: '5+ years',
@@ -101,7 +101,7 @@ export const jobs = [
     id: 'GG-1006',
     title: 'Heavy Vehicle Driver',
     company: 'Demo Logistics Transport',
-    city: 'Jeddah',
+    city: 'Al Wakrah',
     industry: 'transportation-drivers',
     type: 'Full-time',
     experience: '1–2 years',
@@ -110,7 +110,7 @@ export const jobs = [
     description:
       'Operate heavy trucks for regional deliveries, complete inspections and maintain delivery records.',
     requirements: [
-      'Valid heavy vehicle licence (Saudi licence preferred)',
+      'Valid heavy vehicle licence (Qatar licence preferred)',
       'Clean driving record',
       'Basic route documentation skills',
     ],
@@ -119,7 +119,7 @@ export const jobs = [
     id: 'GG-1007',
     title: 'Cleaner',
     company: 'Demo Facility Management',
-    city: 'Makkah',
+    city: 'Doha',
     industry: 'cleaning-facility-management',
     type: 'Full-time',
     experience: 'Entry level',
@@ -137,7 +137,7 @@ export const jobs = [
     id: 'GG-1008',
     title: 'Warehouse Worker',
     company: 'Demo Distribution',
-    city: 'Riyadh',
+    city: 'Al Khor',
     industry: 'logistics-warehousing',
     type: 'Full-time',
     experience: '1–2 years',
@@ -155,7 +155,7 @@ export const jobs = [
     id: 'GG-1009',
     title: 'Mechanical Technician',
     company: 'Demo Plant Services',
-    city: 'Dammam',
+    city: 'Dukhan',
     industry: 'mechanical-maintenance',
     type: 'Contract',
     experience: '3–5 years',
@@ -173,7 +173,7 @@ export const jobs = [
     id: 'GG-1010',
     title: 'Mason',
     company: 'Demo Build Contractors',
-    city: 'Madinah',
+    city: 'Umm Salal',
     industry: 'carpentry-masonry',
     type: 'Contract',
     experience: '3–5 years',
@@ -194,16 +194,16 @@ export const industryLabel = (slug, list) => list.find((i) => i.slug === slug)?.
 export const formatSalary = (salary, lang = 'en') => {
   if (!salary) return null;
   const fmt = (n) =>
-    new Intl.NumberFormat(lang === 'ar' ? 'ar-SA' : 'en-SA', { maximumFractionDigits: 0 }).format(n);
+    new Intl.NumberFormat(lang === 'ar' ? 'ar-QA' : 'en-QA', { maximumFractionDigits: 0 }).format(n);
   return lang === 'ar'
-    ? `${fmt(salary.min)} – ${fmt(salary.max)} ريال / شهر`
-    : `SAR ${fmt(salary.min)} – ${fmt(salary.max)} / month`;
+    ? `${fmt(salary.min)} – ${fmt(salary.max)} ر.ق / شهر`
+    : `QAR ${fmt(salary.min)} – ${fmt(salary.max)} / month`;
 };
 
 export const formatDate = (iso, lang = 'en') => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-SA' : 'en-GB', {
+  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-QA' : 'en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

@@ -15,7 +15,7 @@ export default function JobsPage() {
             <Icon name="chevron-right" size={12} />
             <span>{t('Jobs')}</span>
           </div>
-          <h1>{t('Explore Opportunities Across Saudi Arabia.')}</h1>
+          <h1>{t('Explore Opportunities Across Qatar.')}</h1>
           <p>
             {t(
               'Search current openings by trade, city, experience and employment type. Sample listings are shown until real vacancies are published.'

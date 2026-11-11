@@ -74,7 +74,7 @@ export default function JobAlert({ filters }) {
           <small>
             {summary.length
               ? `${t('Watching')}: ${summary.join(' · ')}`
-              : t('Watching all vacancies across Saudi Arabia')}
+              : t('Watching all vacancies across Qatar')}
           </small>
         </div>
       </div>

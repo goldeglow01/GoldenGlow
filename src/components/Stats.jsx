@@ -61,7 +61,7 @@ function CountUp({ value, suffix, duration = 1400 }) {
 
 export default function Stats() {
   const { t, lang } = useApp();
-  const fmt = (n) => new Intl.NumberFormat(lang === 'ar' ? 'ar-SA' : 'en-US').format(n);
+  const fmt = (n) => new Intl.NumberFormat(lang === 'ar' ? 'ar-QA' : 'en-US').format(n);
 
   return (
     <section className="trust" aria-label={t('Connecting Businesses and Workers Through Reliable Workforce Solutions.')}>
