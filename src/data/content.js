@@ -144,11 +144,8 @@ export const countries = [
   },
   { code: 'in', name: 'India', ar: 'الهند', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
   { code: 'pk', name: 'Pakistan', ar: 'باكستان', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
-  { code: 'bd', name: 'Bangladesh', ar: 'بنغلاديش', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
   { code: 'np', name: 'Nepal', ar: 'نيبال', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
-  { code: 'ph', name: 'Philippines', ar: 'الفلبين', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
   { code: 'lk', name: 'Sri Lanka', ar: 'سريلانكا', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
-  { code: 'eg', name: 'Egypt', ar: 'مصر', note: { en: 'Talent sourcing', ar: 'استقطاب المواهب' } },
 ];
 
 export const journeys = {

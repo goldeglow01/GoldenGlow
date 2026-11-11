@@ -106,11 +106,8 @@ export const nav = [
       { label: 'Saudi Arabia', to: '/#countries' },
       { label: 'India', to: '/#countries' },
       { label: 'Pakistan', to: '/#countries' },
-      { label: 'Bangladesh', to: '/#countries' },
       { label: 'Nepal', to: '/#countries' },
-      { label: 'Philippines', to: '/#countries' },
       { label: 'Sri Lanka', to: '/#countries' },
-      { label: 'Egypt', to: '/#countries' },
     ],
   },
   {
