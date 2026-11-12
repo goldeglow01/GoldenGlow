@@ -261,6 +261,11 @@ export default function GlobeSection() {
 
     const placeLabels = () => {
       scene.updateMatrixWorld(true);
+      // The camera is not part of the scene graph, so its inverse matrix is only
+      // filled in by renderer.render(). Update it here so the very first frame
+      // (before or without a render loop) already projects correctly.
+      camera.updateMatrixWorld();
+      camera.matrixWorldInverse.copy(camera.matrixWorld).invert();
       labelNodes.forEach(({ el, local }) => {
         const world = local.clone().applyMatrix4(arcGroup.matrixWorld);
         const normal = world.clone().normalize();
