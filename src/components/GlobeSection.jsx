@@ -7,15 +7,11 @@ import { globePhrases } from '../data/content';
 
 const DOHA = { lat: 25.29, lon: 51.53, label: 'Doha' };
 const HUBS = [
-  { lat: 24.71, lon: 46.68 }, // Riyadh
-  { lat: 28.61, lon: 77.2 }, // Delhi
-  { lat: 24.86, lon: 67.0 }, // Karachi
-  { lat: 23.81, lon: 90.41 }, // Dhaka
-  { lat: 27.71, lon: 85.32 }, // Kathmandu
-  { lat: 14.6, lon: 120.98 }, // Manila
-  { lat: 6.93, lon: 79.86 }, // Colombo
-  { lat: 30.04, lon: 31.24 }, // Cairo
-  { lat: 51.5, lon: -0.13 }, // London
+  { lat: 24.71, lon: 46.68, label: 'Riyadh', place: 'up' },
+  { lat: 28.61, lon: 77.2, label: 'Delhi', place: 'up' },
+  { lat: 24.86, lon: 67.0, label: 'Karachi', place: 'up' },
+  { lat: 27.71, lon: 85.32, label: 'Kathmandu', place: 'down' },
+  { lat: 6.93, lon: 79.86, label: 'Colombo', place: 'down' },
 ];
 
 /** Convert latitude/longitude to a point on a sphere of the given radius. */
@@ -68,6 +64,15 @@ export default function GlobeSection() {
     const id = setInterval(() => setPhraseIndex((i) => (i + 1) % globePhrases.length), 3600);
     return () => clearInterval(id);
   }, [reduceMotion]);
+
+  // Keep the hub labels in the selected language without rebuilding the scene.
+  useEffect(() => {
+    const layer = containerRef.current?.querySelector('.globe-labels');
+    if (!layer) return;
+    HUBS.forEach((hub, i) => {
+      if (layer.children[i]) layer.children[i].textContent = t(hub.label);
+    });
+  }, [t]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -238,6 +243,34 @@ export default function GlobeSection() {
       arcGroup.add(glow);
     });
 
+    // Small place names, one per hub, projected onto the canvas. The globe is
+    // fixed, so the labels only need repositioning on resize; a dot on the far
+    // side of the earth fades out instead of floating over the globe face.
+    const labelLayer = document.createElement('div');
+    labelLayer.className = 'globe-labels';
+    container.appendChild(labelLayer);
+    const labelNodes = HUBS.map((hub) => {
+      const el = document.createElement('span');
+      el.className = `globe-label globe-label--${hub.place}`;
+      el.textContent = t(hub.label);
+      el.dataset.hub = hub.label;
+      labelLayer.appendChild(el);
+      return { el, local: latLonToVector3(hub.lat, hub.lon, 1.01) };
+    });
+    const viewDirection = camera.position.clone().normalize();
+
+    const placeLabels = () => {
+      scene.updateMatrixWorld(true);
+      labelNodes.forEach(({ el, local }) => {
+        const world = local.clone().applyMatrix4(arcGroup.matrixWorld);
+        const normal = world.clone().normalize();
+        const projected = world.clone().project(camera);
+        el.style.left = `${(projected.x * 0.5 + 0.5) * 100}%`;
+        el.style.top = `${(-projected.y * 0.5 + 0.5) * 100}%`;
+        el.style.opacity = normal.dot(viewDirection) > 0.25 ? '1' : '0';
+      });
+    };
+
     // Highlighted Doha hub
     const dohaGlow = new THREE.Sprite(
       new THREE.SpriteMaterial({
@@ -276,6 +309,7 @@ export default function GlobeSection() {
       renderer.setSize(clientWidth, clientHeight, false);
       camera.aspect = clientWidth / clientHeight;
       camera.updateProjectionMatrix();
+      placeLabels();
     };
     resize();
 
@@ -363,6 +397,7 @@ export default function GlobeSection() {
       });
       textures.forEach((texture) => texture.dispose());
       renderer.dispose();
+      if (labelLayer.parentNode === container) container.removeChild(labelLayer);
       if (renderer.domElement.parentNode === container) {
         container.removeChild(renderer.domElement);
       }

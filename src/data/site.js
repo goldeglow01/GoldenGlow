@@ -102,7 +102,7 @@ export const nav = [
     label: 'Countries',
     to: '/#countries',
     children: [
-      { label: 'Qatar', to: '/#countries' },
+      { label: 'Doha, Qatar', to: '/#countries' },
       { label: 'Saudi Arabia', to: '/#countries' },
       { label: 'India', to: '/#countries' },
       { label: 'Pakistan', to: '/#countries' },

@@ -254,6 +254,11 @@ export const ar = {
   'Hire Skilled Workers': 'وظّف عمالًا ماهرين',
   'Explore Job Opportunities': 'استكشف فرص العمل',
   'Doha, Qatar': 'الدوحة، قطر',
+  Riyadh: 'الرياض',
+  Delhi: 'دلهي',
+  Karachi: 'كراتشي',
+  Kathmandu: 'كاتماندو',
+  Colombo: 'كولومبو',
   'Interactive globe': 'كرة أرضية تفاعلية',
 
   // Team

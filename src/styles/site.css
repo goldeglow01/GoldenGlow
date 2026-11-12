@@ -1565,6 +1565,42 @@ a.topbar__item:hover{
 .globe-card .icon{
   color:var(--blue)
 }
+.globe-labels{
+  position:absolute;
+  top:0;
+  right:0;
+  bottom:0;
+  left:0;
+  pointer-events:none;
+  z-index:3
+}
+.globe-label{
+  position:absolute;
+  transform:translate(-50%,-150%);
+  font-size:8.5px;
+  font-weight:700;
+  line-height:1.3;
+  letter-spacing:.01em;
+  color:#4a0e27;
+  background:#ffffffe0;
+  border:1px solid rgba(122,27,69,.14);
+  border-radius:999px;
+  padding:1px 5px;
+  white-space:nowrap;
+  pointer-events:none;
+  box-shadow:0 2px 8px rgba(27,16,21,.14);
+  transition:opacity .3s ease;
+  z-index:4
+}
+.globe-label--down{
+  transform:translate(-50%,35%)
+}
+@media (max-width:560px){
+  .globe-label{
+    font-size:7.5px;
+    padding:0 4px
+  }
+}
 .industries-panel{
   position:relative;
   border-radius:clamp(24px,3vw,44px);

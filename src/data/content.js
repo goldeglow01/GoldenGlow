@@ -132,8 +132,8 @@ export const countries = [
   {
     code: 'qa',
     flag: '/flags/qa.png',
-    name: 'Qatar',
-    ar: 'قطر',
+    name: 'Doha, Qatar',
+    ar: 'الدوحة، قطر',
     note: { en: 'Head office & primary market', ar: 'المقر الرئيسي والسوق الرئيسي' },
   },
   {

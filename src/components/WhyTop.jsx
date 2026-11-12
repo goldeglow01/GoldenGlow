@@ -12,15 +12,11 @@ const figures = [
 /* Doha is the origin hub; every link is drawn from the head office in Qatar. */
 const ORIGIN = { lat: 25.29, lon: 51.53 };
 const NETWORK = [
-  { lat: 24.71, lon: 46.68 }, // Riyadh
-  { lat: 28.61, lon: 77.2 }, // Delhi
-  { lat: 24.86, lon: 67.0 }, // Karachi
-  { lat: 23.81, lon: 90.41 }, // Dhaka
-  { lat: 27.71, lon: 85.32 }, // Kathmandu
-  { lat: 14.6, lon: 120.98 }, // Manila
-  { lat: 6.93, lon: 79.86 }, // Colombo
-  { lat: 30.04, lon: 31.24 }, // Cairo
-  { lat: 51.5, lon: -0.13 }, // London
+  { lat: 24.71, lon: 46.68, label: 'Riyadh', place: 'up', dx: -1 },
+  { lat: 28.61, lon: 77.2, label: 'Delhi', place: 'up', dx: 0 },
+  { lat: 24.86, lon: 67.0, label: 'Karachi', place: 'down', dx: -2 },
+  { lat: 27.71, lon: 85.32, label: 'Kathmandu', place: 'down', dx: 3 },
+  { lat: 6.93, lon: 79.86, label: 'Colombo', place: 'down', dx: 0 },
 ];
 
 /* The globe backdrop is an equirectangular map showing 180° of longitude,
@@ -134,6 +130,19 @@ export default function WhyTop() {
                 opacity="0.7"
               />
             </svg>
+            {/* Small place names sit on their dot, so the map reads at a glance. */}
+            {NETWORK.map((hub) => {
+              const point = project(hub);
+              return (
+                <span
+                  key={`label-${hub.lat}-${hub.lon}`}
+                  className={`globe-label globe-label--${hub.place}`}
+                  style={{ left: `calc(${point.x}% + ${hub.dx || 0}%)`, top: `${point.y}%` }}
+                >
+                  {t(hub.label)}
+                </span>
+              );
+            })}
           </div>
           <div className="globe-card" style={{ position: 'relative', margin: '-22px auto 0', width: 'fit-content' }}>
             <Icon name="pin" size={15} />
