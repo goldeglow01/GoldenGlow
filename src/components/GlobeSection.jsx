@@ -328,6 +328,9 @@ export default function GlobeSection() {
 
     const renderFrame = () => {
       const elapsed = clock.getElapsedTime();
+      // Re-project every frame: the page can settle into its final width after
+      // the first resize (fonts, lazy sections), and the labels must follow.
+      placeLabels();
       if (!reduceMotion) {
         dohaGlow.scale.setScalar(0.15 + Math.sin(elapsed * 1.6) * 0.015);
         dohaDot.scale.setScalar(1 + Math.sin(elapsed * 1.6) * 0.15);
@@ -353,6 +356,10 @@ export default function GlobeSection() {
 
     renderFrame();
 
+    // With reduced motion the loop runs once, so settle the label positions
+    // again after the rest of the page has finished laying out.
+    const settleTimer = reduceMotion ? setTimeout(placeLabels, 400) : null;
+
     let intersectionObserver;
     if (typeof IntersectionObserver !== 'undefined') {
       intersectionObserver = new IntersectionObserver(
@@ -377,6 +384,7 @@ export default function GlobeSection() {
     return () => {
       disposed = true;
       stopLoop();
+      if (settleTimer) clearTimeout(settleTimer);
       document.removeEventListener('visibilitychange', onVisibility);
       intersectionObserver?.disconnect();
       if (resizeObserver) resizeObserver.disconnect();
