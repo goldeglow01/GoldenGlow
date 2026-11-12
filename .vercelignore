@@ -1,0 +1,12 @@
+node_modules
+dist
+tmp
+.logs
+.env
+.env.*
+.env.local.bak
+supabase/.temp
+.agents
+.freebuff
+skills-lock.json
+*.pdf
