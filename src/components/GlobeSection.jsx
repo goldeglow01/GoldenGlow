@@ -7,11 +7,11 @@ import { globePhrases } from '../data/content';
 
 const DOHA = { lat: 25.29, lon: 51.53, label: 'Doha' };
 const HUBS = [
-  { lat: 24.71, lon: 46.68, label: 'Riyadh', place: 'up' },
-  { lat: 28.61, lon: 77.2, label: 'Delhi', place: 'up' },
-  { lat: 24.86, lon: 67.0, label: 'Karachi', place: 'up' },
-  { lat: 27.71, lon: 85.32, label: 'Kathmandu', place: 'down' },
-  { lat: 6.93, lon: 79.86, label: 'Colombo', place: 'down' },
+  { lat: 24.71, lon: 46.68, label: 'Riyadh', place: 'up', dx: 0 },
+  { lat: 28.61, lon: 77.2, label: 'Delhi', place: 'up', dx: 2 },
+  { lat: 24.86, lon: 67.0, label: 'Karachi', place: 'up', dx: -9 },
+  { lat: 27.71, lon: 85.32, label: 'Kathmandu', place: 'down', dx: 8 },
+  { lat: 6.93, lon: 79.86, label: 'Colombo', place: 'down', dx: 4 },
 ];
 
 /** Convert latitude/longitude to a point on a sphere of the given radius. */
@@ -252,6 +252,7 @@ export default function GlobeSection() {
     const labelNodes = HUBS.map((hub) => {
       const el = document.createElement('span');
       el.className = `globe-label globe-label--${hub.place}`;
+      el.style.marginLeft = `${hub.dx}px`;
       el.textContent = t(hub.label);
       el.dataset.hub = hub.label;
       labelLayer.appendChild(el);
